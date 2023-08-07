@@ -6,7 +6,7 @@ const { getClassifier } = require('../classifier/classifier')
 const currentStep =
 //   "Can you mint a BAYC NFT for me";
     // "Can you transfer this BAYC NFT to this address 0x288d1d682311018736B820294D22Ed0DBE372188"
-    "Can you please send 10 USDC token to this address 0x288d1d682311018736B820294D22Ed0DBE372188"
+    "Can you please send 15 USDC token to this address 0xE153aa7d78036f90B5155FBE3b7BbC337b50DF65"
 
 router.get('/', async (req, res) => {
     const intent = req.query.intent;
