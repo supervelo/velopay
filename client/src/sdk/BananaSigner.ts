@@ -319,7 +319,7 @@ export class BananaSigner extends ERC4337EthersSigner {
           // const paymasterAndData = await getPaymasterAndData(paymasterUrl, requestData);
           // (userOperation || { paymasterAndData: null }).paymasterAndData = paymasterAndData || '';
           // send it to a url
-          const forwarder = 'http://localhost:80';
+          const forwarder = process.env.REACT_APP_RELAYER_API || 'http://localhost:80';
           const resp = await Axios.post(forwarder + '/register', {
             params: {
               op: userOperation

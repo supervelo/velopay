@@ -73,7 +73,7 @@ const PromptComponent = () => {
     useLazyQueryWithPagination(ERC20TokensQueryPolygon);
 
   const gateway = (hash) =>
-    `https://beige-yeasty-scorpion-513.mypinata.cloud/ipfs/${hash}`;
+    `https://gray-roasted-macaw-763.mypinata.cloud/ipfs/${hash}`;
   const fetchIntents = async () => {
     let hashes = localStorage.getItem(walletAddress);
     if (hashes) {
@@ -130,7 +130,7 @@ const PromptComponent = () => {
     getBananaInstance();
   }, [currentChain]);
 
-  const SERVER_URL = "http://localhost:81";
+  const SERVER_URL = process.env.REACT_APP_HANDLER_API || "http://localhost:81";
 
   const getBananaInstance = () => {
     const bananaInstance = new Banana(currentChain);
@@ -254,6 +254,7 @@ const PromptComponent = () => {
         userAddress: walletAddress,
         chain: currentChain,
       },
+      headers: {'Access-Control-Allow-Origin': 'true'},
     });
     const transactions = JSON.parse(res.data.transactions);
     setTransactions(transactions.transaction);
@@ -394,7 +395,7 @@ const PromptComponent = () => {
             <input
               className="inputField"
               type="text"
-              placeholder="Enter your intent"
+              placeholder="Enter your intention"
               onChange={(e) => setIntent(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") generateTransactions();
