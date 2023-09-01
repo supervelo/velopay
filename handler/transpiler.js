@@ -49,8 +49,8 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
     
     if(chain === "137") {
       console.log('we are here ', chain);
-    swapMeta = supportedTokenSwap.filter(pair => isPairSimilar(pair.pair, swapInfo[0]));
-    console.log('these are supportred tokens ', supportedTokenSwap);
+      swapMeta = supportedTokenSwap.filter(pair => isPairSimilar(pair.pair, swapInfo[0]));
+      console.log('these are supportred tokens ', supportedTokenSwap);
     }
     else 
     swapMeta = supportedTokenSwapGnosis.filter(pair => isPairSimilar(pair.pair, swapInfo[0]));

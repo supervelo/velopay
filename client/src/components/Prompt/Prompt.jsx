@@ -349,16 +349,14 @@ const PromptComponent = () => {
                 <TokenSection tokens={tokens.polygon} />
                 <p className="walletaddress-div">
                   {" "}
-                  {walletAddress.slice(0, 7) +
-                    "..." +
-                    walletAddress.slice(37, 42)}{" "}
+                  {walletAddress}
                 </p>
                 {/* <CopyToClipboard text={walletAddress} onCopy={() => toast.success('Address copied')}>
               <FaRegCopy style={{ marginLeft: "10px" }} />
                 </CopyToClipboard> */}
-                <button className="connect-btn" onClick={() => setOnRamp(true)}>
+                {/* <button className="connect-btn" onClick={() => setOnRamp(true)}>
                   Onramp funds
-                </button>
+                </button> */}
               </div>
             ) : (
               <div>
