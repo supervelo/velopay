@@ -15,9 +15,12 @@ import { useLazyQueryWithPagination } from "@airstack/airstack-react";
 import { ERC20TokensQueryPolygon } from "../../query";
 import TokenSection from "../tokens/Token";
 import { FaRegCopy } from "react-icons/fa";
-// import ChatIconModal from "../Chats/Chats";
-import { CopyToClipboard } from "react-copy-to-clipboard";
-import OnrampComponent from "../Onramp/Onramp";
+import {
+  WalletModalProvider,
+  WalletDisconnectButton,
+  WalletMultiButton
+} from '@solana/wallet-adapter-react-ui';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { saveToLocalStorage } from "../../utils/saveToLocalstorage";
 import { ReactSearchAutocomplete } from "react-search-autocomplete";
 // import { AutoComplete } from "react-autocomplete";
@@ -52,6 +55,13 @@ const PromptComponent = () => {
     },
   ];
 
+  const { 
+    publicKey, 
+    sendTransaction: sendSolanaTransaction, 
+    connecting, 
+    connected, 
+    disconnecting 
+  } = useWallet();
   const [walletAddress, setWalletAddress] = useState("");
   const [bananaSdkInstance, setBananSdkInstance] = useState(null);
   const [transactions, setTransactions] = useState();
@@ -75,7 +85,7 @@ const PromptComponent = () => {
   const gateway = (hash) =>
     `https://gray-roasted-macaw-763.mypinata.cloud/ipfs/${hash}`;
   const fetchIntents = async () => {
-    let hashes = localStorage.getItem(walletAddress);
+    let hashes = localStorage.getItem(publicKey);
     if (hashes) {
       hashes = JSON.parse(hashes);
       console.log(hashes, hashes[0]);
@@ -107,7 +117,7 @@ const PromptComponent = () => {
 
     fetchIntents();
     // initStripe()
-  }, [fetch, walletAddress]);
+  }, [fetch, publicKey]);
 
   useEffect(() => {
     if (data) {
@@ -246,12 +256,12 @@ const PromptComponent = () => {
     const savingRes = await Axios(pinataAxiosConfig);
     console.log("resp", savingRes);
     // resp.data.IpfsHash
-    saveToLocalStorage(walletAddress, savingRes.data.IpfsHash);
+    saveToLocalStorage(publicKey, savingRes.data.IpfsHash);
 
     const res = await Axios.get(SERVER_URL + "/solve", {
       params: {
         intent: intent,
-        userAddress: walletAddress,
+        userAddress: publicKey,
         chain: currentChain,
       },
       headers: {'Access-Control-Allow-Origin': 'true'},
@@ -344,13 +354,16 @@ const PromptComponent = () => {
         <Toaster />
         <div className="rainbow-div">
           <div className="rainbow-btn">
-            {walletAddress ? (
+            {connected ? (
               <div>
-                <TokenSection tokens={tokens.polygon} />
+                {/* <TokenSection tokens={tokens.polygon} /> */}
                 <p className="walletaddress-div">
                   {" "}
-                  {walletAddress}
+                  {publicKey.toString().slice(0, 5) + "........." + publicKey.toString().slice(-5)}
                 </p>
+                <WalletModalProvider>
+                  <WalletDisconnectButton />
+                </WalletModalProvider>
                 {/* <CopyToClipboard text={walletAddress} onCopy={() => toast.success('Address copied')}>
               <FaRegCopy style={{ marginLeft: "10px" }} />
                 </CopyToClipboard> */}
@@ -367,11 +380,14 @@ const PromptComponent = () => {
                   placement="bottom"
                   className="chain-dropdown"
                 >
-                  <Button>{getChainName(currentChain)}</Button>
+                  <Button>Devnet</Button>
                 </Dropdown>
-                <button className="connect-btn" onClick={() => connectWallet()}>
+                <WalletModalProvider>
+                    <WalletMultiButton />
+                </WalletModalProvider>
+                {/* <button className="connect-btn" onClick={() => connectWallet()}>
                   Connect
-                </button>
+                </button> */}
               </div>
             )}
             {/* <OnrampComponent openOnramp={onramp} /> */}

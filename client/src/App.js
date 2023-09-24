@@ -1,7 +1,7 @@
 import React from "react";
 import PromptComponent from "./components/Prompt/Prompt";
 import { init } from '@airstack/airstack-react';
-// import "@rainbow-me/rainbowkit/styles.css";
+import { SolanaWalletProvider } from "./context/solana";
 
 // import {
 //   RainbowKitProvider,
@@ -22,9 +22,9 @@ function App() {
   return (
     <div className="App">
       {/* <WagmiConfig client={wagmiClient}> */}
-        {/* <RainbowKitProvider chains={chains}> */}
+        <SolanaWalletProvider>
           <PromptComponent />
-        {/* </RainbowKitProvider> */}
+        </SolanaWalletProvider>
       {/* </WagmiConfig> */}
     </div>
   );
