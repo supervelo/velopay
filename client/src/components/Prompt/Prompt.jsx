@@ -15,7 +15,7 @@ import { useLazyQueryWithPagination } from "@airstack/airstack-react";
 import { ERC20TokensQueryPolygon } from "../../query";
 import TokenSection from "../tokens/Token";
 import { FaRegCopy } from "react-icons/fa";
-import { VersionedTransaction, TransactionMessage, sendAndConfirmRawTransaction, sendAndConfirmTransaction, AddressLookupTableAccount, AddressLookupTableProgram, PublicKey } from "@solana/web3.js";
+import { VersionedTransaction, sendAndConfirmTransaction } from "@solana/web3.js";
 import {
   WalletModalProvider,
   WalletDisconnectButton,
@@ -58,7 +58,7 @@ const PromptComponent = () => {
 
   const { 
     publicKey, 
-    sendTransaction: sendSolanaTransaction, 
+    sendTransaction: sendSolanaTransaction,
     signTransaction,
     signMessage,
     connecting, 
@@ -202,26 +202,19 @@ const PromptComponent = () => {
         console.log(`https://explorer.solana.com/tx/${txid}?cluster=devnet`)
       }
 
-      // if (transactions.length === 1) {
-      //   const finalTxn = {
-      //     ...transactions[0],
-      //     gasLimit: "0x55555",
-      //   };
-      //   txnResp = await signer.sendTransaction(finalTxn);
-      //   console.log("response from txn", txnResp);
-      // } else {
-      //   console.log("here we are ", transactions);
-      //   const txns = transactions.map((txn) => {
-      //     return {
-      //       ...txn,
-      //       gasLimit: "0xF4240",
-      //     };
-      //   });
+      // swap only works on mainnet
+      if (txnType === "swap") {
+        // deserialize the transaction
+        const swapTransactionBuf = Buffer.from(transactions[0], 'base64');
+        var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
 
-      //   console.log("these are txns", txns);
-      //   const txnResp = await signer.sendBatchTransaction(txns);
-      //   console.log("response from bvatched txn", txnResp);
-      // }
+        const signedTx = await signTransaction(transaction)
+
+        const txid = await sendAndConfirmTransaction(connection, signedTx)
+        console.log(`https://solscan.io/tx/${txid}`)
+      } 
+      
+      // sendBatchTransaction handler?
     }
 
     toast.success("Transaction successfull !!");
@@ -272,7 +265,7 @@ const PromptComponent = () => {
     const res = await Axios.get(SERVER_URL + "/solve", {
       params: {
         intent: intent,
-        userAddress: publicKey,
+        userAddress: publicKey.toString(),
         chain: currentChain,
       },
       headers: {'Access-Control-Allow-Origin': 'true'},
