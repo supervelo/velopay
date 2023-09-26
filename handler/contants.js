@@ -212,6 +212,10 @@ const supportTokenSend = [
     {
         name: "USDT",
         address: '0x12098e85e9c28Aa034de6dCEeBAAF0bf22670b46'
+    },
+    {
+      name: "SOL",
+      address: '9gogWRPeN1DN2o6FFv73X5rFYhHGunq7EJHua8A7inqh'
     }
 ]
 
