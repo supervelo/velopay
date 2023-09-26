@@ -37,8 +37,7 @@ const constructSendTransaction = async (transferMeta) => {
     const tx = new Transaction().add(SystemProgram.transfer({
         fromPubkey: fromPubKey,
         toPubkey: toPubKey,
-        lamports: solAmount * LAMPORTS_PER_SOL
-
+        lamports: LAMPORTS_PER_SOL * solAmount
     }));
 
     const connection = new Connection(clusterApiUrl("devnet"), 'confirmed');
@@ -52,9 +51,9 @@ const constructSendTransaction = async (transferMeta) => {
         success: true,
         context: `This transaction would transfer ${transferMeta.amount} of ${transferMeta.name} token from your Solana account to ${transferMeta.toAddress}.` ,
         transaction: [{
-            to: transferMeta.fromAddress,
+            to: transferMeta.programAddress,
             data: transactionBase64,
-            value: 0
+            value: transferMeta.amount
         }]
     }
 }

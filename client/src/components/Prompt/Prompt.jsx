@@ -198,7 +198,6 @@ const PromptComponent = () => {
         const transferTransactionBuf = Buffer.from(transactions[0].data, 'base64');
         var transaction = VersionedTransaction.deserialize(transferTransactionBuf);
         const signedTx = await signTransaction(transaction)
-        const rawTransaction = signedTx.serialize()
         const txid = await sendAndConfirmTransaction(connection, signedTx)
         console.log(`https://explorer.solana.com/tx/${txid}?cluster=devnet`)
       }
@@ -256,6 +255,11 @@ const PromptComponent = () => {
   });
 
   const generateTransactions = async () => {
+    if (!connected) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
     setIsLoading(true);
     const pinataAxiosConfig = getPinataConfig(intent);
     console.log("this is pijnata axios config ", pinataAxiosConfig);

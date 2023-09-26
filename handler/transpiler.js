@@ -120,8 +120,9 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
     if(sendTokenMeta.length === 0) return "Insufficient details for transfer";
 
     const sendTransactionData = {
-        fromAddress: sendTokenMeta[0].address,
+        programAddress: sendTokenMeta[0].address,
         name: sendTokenMeta[0].name,
+        fromAddress: userAddress,
         amount: tokenSendInfo[1],
         toAddress: tokenSendInfo[2]
     };
