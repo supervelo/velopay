@@ -120,17 +120,18 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
     if(sendTokenMeta.length === 0) return "Insufficient details for transfer";
 
     const sendTransactionData = {
-        address: sendTokenMeta[0].address,
+        programAddress: sendTokenMeta[0].address,
         name: sendTokenMeta[0].name,
+        fromAddress: userAddress,
         amount: tokenSendInfo[1],
         toAddress: tokenSendInfo[2]
     };
 
     console.log("sendTransactionData", sendTransactionData);
-    const sendTransactionResp = constructSendTransaction(sendTransactionData);
+    const sendTransactionResp = await constructSendTransaction(sendTransactionData);
     console.log('sendTransactionResp', sendTransactionResp);
 
-    return { ...sendTransactionResp, type: 'normal'};
+    return { ...sendTransactionResp, type: 'transfer'};
   } else if(context === 'staking') { // mumbai -> avalanche
     let tokenAmount = 0;
     // 0 -> token amount 

@@ -15,6 +15,7 @@ import { useLazyQueryWithPagination } from "@airstack/airstack-react";
 import { ERC20TokensQueryPolygon } from "../../query";
 import TokenSection from "../tokens/Token";
 import { FaRegCopy } from "react-icons/fa";
+import { VersionedTransaction, TransactionMessage, sendAndConfirmRawTransaction, sendAndConfirmTransaction, AddressLookupTableAccount, AddressLookupTableProgram, PublicKey } from "@solana/web3.js";
 import {
   WalletModalProvider,
   WalletDisconnectButton,
@@ -58,10 +59,13 @@ const PromptComponent = () => {
   const { 
     publicKey, 
     sendTransaction: sendSolanaTransaction, 
+    signTransaction,
+    signMessage,
     connecting, 
     connected, 
     disconnecting 
   } = useWallet();
+  const { connection } = useConnection();
   const [walletAddress, setWalletAddress] = useState("");
   const [bananaSdkInstance, setBananSdkInstance] = useState(null);
   const [transactions, setTransactions] = useState();
@@ -182,7 +186,7 @@ const PromptComponent = () => {
     // setIsLoading(false);
     // return;
     console.log("this is txn type ", txnType);
-    const signer = walletInstance.getSigner();
+    const signer = publicKey;
     if (txnType === "bridge") {
       await bundleAndSend(transactions);
       toast.success("Transaction successfull !!");
@@ -190,32 +194,34 @@ const PromptComponent = () => {
       let txnResp;
       console.log("transactions formed ", transactions);
 
-      if (currentChain !== 137 && currentChain !== 100 && txnType === "swap") {
-        toast.error("Swap is not supported on testnets");
-        setIsLoading(false);
-        return;
+      if (txnType === "transfer"){
+        const transferTransactionBuf = Buffer.from(transactions[0].data, 'base64');
+        var transaction = VersionedTransaction.deserialize(transferTransactionBuf);
+        const signedTx = await signTransaction(transaction)
+        const txid = await sendAndConfirmTransaction(connection, signedTx)
+        console.log(`https://explorer.solana.com/tx/${txid}?cluster=devnet`)
       }
 
-      if (transactions.length === 1) {
-        const finalTxn = {
-          ...transactions[0],
-          gasLimit: "0x55555",
-        };
-        txnResp = await signer.sendTransaction(finalTxn);
-        console.log("response from txn", txnResp);
-      } else {
-        console.log("here we are ", transactions);
-        const txns = transactions.map((txn) => {
-          return {
-            ...txn,
-            gasLimit: "0xF4240",
-          };
-        });
+      // if (transactions.length === 1) {
+      //   const finalTxn = {
+      //     ...transactions[0],
+      //     gasLimit: "0x55555",
+      //   };
+      //   txnResp = await signer.sendTransaction(finalTxn);
+      //   console.log("response from txn", txnResp);
+      // } else {
+      //   console.log("here we are ", transactions);
+      //   const txns = transactions.map((txn) => {
+      //     return {
+      //       ...txn,
+      //       gasLimit: "0xF4240",
+      //     };
+      //   });
 
-        console.log("these are txns", txns);
-        const txnResp = await signer.sendBatchTransaction(txns);
-        console.log("response from bvatched txn", txnResp);
-      }
+      //   console.log("these are txns", txns);
+      //   const txnResp = await signer.sendBatchTransaction(txns);
+      //   console.log("response from bvatched txn", txnResp);
+      // }
     }
 
     toast.success("Transaction successfull !!");
@@ -249,6 +255,11 @@ const PromptComponent = () => {
   });
 
   const generateTransactions = async () => {
+    if (!connected) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
     setIsLoading(true);
     const pinataAxiosConfig = getPinataConfig(intent);
     console.log("this is pijnata axios config ", pinataAxiosConfig);
