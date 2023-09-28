@@ -13,7 +13,7 @@ require('@solana/wallet-adapter-react-ui/styles.css');
 
 export const SolanaWalletProvider = ({ children }) => {
     // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'.
-    const network = 'https://neat-hidden-sanctuary.solana-mainnet.discover.quiknode.pro/2af5315d336f9ae920028bbb90a73b724dc1bbed/';
+    const network = process.env.REACT_APP_SOLANA_RPC_URL || clusterApiUrl('devnet');
 
     // You can also provide a custom RPC endpoint.
     const endpoint = useMemo(() => network, [network]);

@@ -57,11 +57,22 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
 
     if(swapMeta.length === 0) return "Insufficient details for swap";
     console.log('this is swap meta ', swapMeta);
+
+    let singlePair = swapMeta[0]
+    // Naive check if the pair should be in reverse order 
+    // because maybe the gpt pair response is in reverse order
+    if (singlePair.pair[0].toLowerCase() === swapInfo[0][0].toLowerCase()) {
+      singlePair = {
+        ...singlePair, 
+        pair: [singlePair.pair[1], singlePair.pair[0]],
+      }
+    }
+    console.log(singlePair)
     
     const swapTransactionMeta = {
-      pair: swapMeta[0].pair,
-      tokenAddress1: swapMeta[0][swapMeta[0].pair[0]],
-      tokenAddress2: swapMeta[0][swapMeta[0].pair[1]],
+      pair: singlePair.pair,
+      tokenIn: singlePair[singlePair.pair[0]],
+      tokenOut: singlePair[singlePair.pair[1]],
       amount: swapInfo[1],
       userAddress,
       chain

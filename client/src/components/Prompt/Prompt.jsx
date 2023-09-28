@@ -208,6 +208,7 @@ const PromptComponent = () => {
         const swapTransactionBuf = Buffer.from(transactions[0], 'base64');
         var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
 
+        // sign the transaction
         const signedTx = await signTransaction(transaction)
 
         const txid = await sendAndConfirmTransaction(connection, signedTx)
