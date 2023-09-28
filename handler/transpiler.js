@@ -13,7 +13,7 @@ const {
   supportTokenSend,
   supportedTokenSwap,
   bridgeInfoExtractor,
-  supportedTokenSwapGnosis
+  supportedTokenSwapSolana
 } = require("./contants");
 const { getResponse } = require('./gpt/llm')
 const { isWordSimilar, isPairSimilar } = require('./utils/similarity')
@@ -47,21 +47,32 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
     let swapMeta;
     // order would always be correct in supportedTokenSwap
     
-    if(chain === "137") {
-      console.log('we are here ', chain);
-      swapMeta = supportedTokenSwap.filter(pair => isPairSimilar(pair.pair, swapInfo[0]));
-      console.log('these are supportred tokens ', supportedTokenSwap);
-    }
-    else 
-    swapMeta = supportedTokenSwapGnosis.filter(pair => isPairSimilar(pair.pair, swapInfo[0]));
+    // if(chain === "137") {
+    //   console.log('we are here ', chain);
+    //   swapMeta = supportedTokenSwap.filter(pair => isPairSimilar(pair.pair, swapInfo[0]));
+    //   console.log('these are supportred tokens ', supportedTokenSwap);
+    // }
+    // else 
+    swapMeta = supportedTokenSwapSolana.filter(pair => isPairSimilar(pair.pair, swapInfo[0]));
 
     if(swapMeta.length === 0) return "Insufficient details for swap";
     console.log('this is swap meta ', swapMeta);
+
+    let singlePair = swapMeta[0]
+    // Naive check if the pair should be in reverse order 
+    // because maybe the gpt pair response is in reverse order
+    if (singlePair.pair[0].toLowerCase() === swapInfo[0][0].toLowerCase()) {
+      singlePair = {
+        ...singlePair, 
+        pair: [singlePair.pair[1], singlePair.pair[0]],
+      }
+    }
+    console.log(singlePair)
     
     const swapTransactionMeta = {
-      pair: swapMeta[0].pair,
-      tokenAddress1: swapMeta[0][swapMeta[0].pair[0]],
-      tokenAddress2: swapMeta[0][swapMeta[0].pair[1]],
+      pair: singlePair.pair,
+      tokenIn: singlePair[singlePair.pair[0]],
+      tokenOut: singlePair[singlePair.pair[1]],
       amount: swapInfo[1],
       userAddress,
       chain
