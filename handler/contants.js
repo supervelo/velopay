@@ -183,7 +183,32 @@ const supportedTokenSwap = [
     'USDT': '0xc2132D05D31c914a87C6611C10748AEb04B58e8F'
   }
 ]
-
+// TODO: add support for readable name(actual Collection name as displayed in the website)
+const supportedTensorCollection = [
+  {
+    name: "Drop Nation DRiP",
+    slug: "a12fcd5d-2067-4e10-8ca2-e7ab4b342e32", // Id of the collection
+    name: "drip_dropnation" // URL display
+  }
+]
+// For now from the query, we need to know if user want to buy, and get the token id
+// 1 -> slugDisplay
+// 2 -> buy or sell
+// 3 -> tokenId
+const tensorInfoExtracter = [
+  {
+    id: 1,
+    question: `The given statement talks about which NFT ${ONE_WORD_ANS} also ${INFO_NOT_AVALAIBLE}`,
+  },
+  {
+    id: 2,
+    question: `About which operation does the given statement talks about buy or sell if it is buying return answer as "buy" or if it is about selling return answer as "sell" ${ONE_WORD_ANS} also ${INFO_NOT_AVALAIBLE}`,
+  },
+  {
+    id: 3,
+    question: `What is the tokenid of NFT user want's to buy ${ONE_WORD_ANS} also ${INFO_NOT_AVALAIBLE}`,
+  },
+]
 const supportedTokenSwapGnosis = [
   {
     pair: ['XDAI', 'USDC'],
@@ -280,5 +305,7 @@ module.exports = {
   supportedTokenToStake,
   bridgeInfoExtractor,
   supportedTokenSwapGnosis,
-  supportedTokenSwapSolana
+  supportedTokenSwapSolana,
+  supportedTensorCollection,
+  tensorInfoExtracter
 };

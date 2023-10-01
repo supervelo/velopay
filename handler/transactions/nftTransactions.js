@@ -104,14 +104,14 @@ const constructNFTBuyTransaction = (nftData) => {
       transaction: [],
     };
 
-  const address = nftData.address;
-  const transferFromCode = new ethers.utils.Interface(
-    nftAbi
-  ).encodeFunctionData("transferFrom", [
-    nftData.userAddress, // this should be the owner address
-    nftData.toAddress, // this should be the caller address
-    nftData.tokenId,
-  ]);
+  // const address = nftData.address;
+  // const transferFromCode = new ethers.utils.Interface(
+  //   nftAbi
+  // ).encodeFunctionData("transferFrom", [
+  //   nftData.userAddress, // this should be the owner address
+  //   nftData.toAddress, // this should be the caller address
+  //   nftData.tokenId,
+  // ]);
 
   return {
     success: true,

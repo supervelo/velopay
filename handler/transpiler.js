@@ -13,7 +13,9 @@ const {
   supportTokenSend,
   supportedTokenSwap,
   bridgeInfoExtractor,
-  supportedTokenSwapSolana
+  supportedTokenSwapSolana,
+  supportedTensorCollection,
+  tensorInfoExtracter
 } = require("./contants");
 const { getResponse } = require('./gpt/llm')
 const { isWordSimilar, isPairSimilar } = require('./utils/similarity')
@@ -88,8 +90,8 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
 
     const nftInfo = [];
 
-    for(let i=0; i < nftInfoExtracter.length; i++) {
-        const resp = await getResponse(nftInfoExtracter[i].question, currentStep);
+    for(let i=0; i < tensorInfoExtracter.length; i++) {
+        const resp = await getResponse(tensorInfoExtracter[i].question, currentStep);
         nftInfo.push(resp);
     }
 
@@ -97,7 +99,7 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
     // 1 -> operation
     // 2 -> tokenId
     // 3 -> to  
-    const nftMeta = supportedNFTs.filter(data => isWordSimilar(data.name, nftInfo[0]));
+    const nftMeta = supportedTensorCollection.filter(data => isWordSimilar(data.name, nftInfo[0]));
 
     if(nftMeta.length === 0) return "Insufficient details for nft operation";
 
@@ -106,7 +108,7 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
         address: nftMeta[0].address,
         operation: nftInfo[1],
         tokenId: nftInfo[2],
-        toAddress: nftInfo[3],
+        // toAddress: nftInfo[3],
         userAddress
     }
 
