@@ -16,7 +16,7 @@ const {
   supportedTokenSwapSolana,
   supportedTensorCollection,
   tensorInfoExtracter
-} = require("./contants");
+} = require("./constants");
 const { getResponse } = require('./gpt/llm')
 const { isWordSimilar, isPairSimilar } = require('./utils/similarity')
 const { constructNFTransaction } = require('./transactions/nftTransactions');
