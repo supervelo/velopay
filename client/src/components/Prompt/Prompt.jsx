@@ -15,13 +15,16 @@ import { useLazyQueryWithPagination } from "@airstack/airstack-react";
 import { ERC20TokensQueryPolygon } from "../../query";
 import TokenSection from "../tokens/Token";
 import { FaRegCopy } from "react-icons/fa";
-import { VersionedTransaction, sendAndConfirmTransaction } from "@solana/web3.js";
+import {
+  VersionedTransaction,
+  sendAndConfirmTransaction,
+} from "@solana/web3.js";
 import {
   WalletModalProvider,
   WalletDisconnectButton,
-  WalletMultiButton
-} from '@solana/wallet-adapter-react-ui';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+  WalletMultiButton,
+} from "@solana/wallet-adapter-react-ui";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { saveToLocalStorage } from "../../utils/saveToLocalstorage";
 import { ReactSearchAutocomplete } from "react-search-autocomplete";
 // import { AutoComplete } from "react-autocomplete";
@@ -56,14 +59,14 @@ const PromptComponent = () => {
     },
   ];
 
-  const { 
-    publicKey, 
+  const {
+    publicKey,
     sendTransaction: sendSolanaTransaction,
     signTransaction,
     signMessage,
-    connecting, 
-    connected, 
-    disconnecting 
+    connecting,
+    connected,
+    disconnecting,
   } = useWallet();
   const { connection } = useConnection();
   const [walletAddress, setWalletAddress] = useState("");
@@ -82,7 +85,6 @@ const PromptComponent = () => {
   });
   const [previosIntents, setPreviousIntents] = useState([]);
   const [onramp, setOnRamp] = useState(false);
-
   const [fetch, { data: data, loading, pagination }] =
     useLazyQueryWithPagination(ERC20TokensQueryPolygon);
 
@@ -194,27 +196,47 @@ const PromptComponent = () => {
       let txnResp;
       console.log("transactions formed ", transactions);
 
-      if (txnType === "transfer"){
-        const transferTransactionBuf = Buffer.from(transactions[0].data, 'base64');
-        var transaction = VersionedTransaction.deserialize(transferTransactionBuf);
-        const signedTx = await signTransaction(transaction)
-        const txid = await sendAndConfirmTransaction(connection, signedTx)
-        console.log(`https://explorer.solana.com/tx/${txid}?cluster=devnet`)
+      if (txnType === "transfer") {
+        const transferTransactionBuf = Buffer.from(
+          transactions[0].data,
+          "base64"
+        );
+        var transaction = VersionedTransaction.deserialize(
+          transferTransactionBuf
+        );
+        const signedTx = await signTransaction(transaction);
+        const txid = await sendAndConfirmTransaction(connection, signedTx);
+        console.log(`https://explorer.solana.com/tx/${txid}?cluster=devnet`);
       }
-
+      if (txnType === "nft_buy") {
+        // buffer type
+        const transferTransactionBuf = Buffer.from(
+          transactions[0].data,
+          "base64"
+        );
+        // console.log(transferTransactionBuf);
+        var transaction = VersionedTransaction.deserialize(
+          transferTransactionBuf
+        );
+        const signedTx = await signTransaction(transaction);
+        const txid = await sendAndConfirmTransaction(connection, signedTx);
+        // const txid = await sendAndConfirmTransaction(connection, signedTx);
+        console.log(
+          `https://explorer.solana.com/tx/${txid}?cluster=mainnet-beta`
+        );
+      }
       // swap only works on mainnet
       if (txnType === "swap") {
         // deserialize the transaction
-        const swapTransactionBuf = Buffer.from(transactions[0], 'base64');
+        const swapTransactionBuf = Buffer.from(transactions[0], "base64");
         var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
 
         // sign the transaction
-        const signedTx = await signTransaction(transaction)
+        const signedTx = await signTransaction(transaction);
+        const txid = await sendAndConfirmTransaction(connection, signedTx);
+        console.log(`https://solscan.io/tx/${txid}`);
+      }
 
-        const txid = await sendAndConfirmTransaction(connection, signedTx)
-        console.log(`https://solscan.io/tx/${txid}`)
-      } 
-      
       // sendBatchTransaction handler?
     }
 
@@ -269,7 +291,7 @@ const PromptComponent = () => {
         userAddress: publicKey.toString(),
         chain: currentChain,
       },
-      headers: {'Access-Control-Allow-Origin': 'true'},
+      headers: { "Access-Control-Allow-Origin": "true" },
     });
     const transactions = JSON.parse(res.data.transactions);
     setTransactions(transactions.transaction);
@@ -364,7 +386,9 @@ const PromptComponent = () => {
                 {/* <TokenSection tokens={tokens.polygon} /> */}
                 <p className="walletaddress-div">
                   {" "}
-                  {publicKey.toString().slice(0, 5) + "........." + publicKey.toString().slice(-5)}
+                  {publicKey.toString().slice(0, 5) +
+                    "........." +
+                    publicKey.toString().slice(-5)}
                 </p>
                 <WalletModalProvider>
                   <WalletDisconnectButton />
@@ -388,7 +412,7 @@ const PromptComponent = () => {
                   <Button>Devnet</Button>
                 </Dropdown>
                 <WalletModalProvider>
-                    <WalletMultiButton />
+                  <WalletMultiButton />
                 </WalletModalProvider>
                 {/* <button className="connect-btn" onClick={() => connectWallet()}>
                   Connect
