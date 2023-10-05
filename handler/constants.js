@@ -297,7 +297,8 @@ const bridgeInfoExtractor = [
 
 let tensorSwapQuery = {
   buyNFTFromListing: {
-    query: `query TcompBuyTx(
+    query: `
+    query TcompBuyTx(
       $buyer: String!
       $maxPrice: Decimal!
       $mint: String!
@@ -319,7 +320,8 @@ let tensorSwapQuery = {
     }
   },
   activeOrders: {
-    query: `query ActiveListingsV2(
+    query: `
+    query ActiveListingsV2(
       $slug: String!
       $sortBy: ActiveListingsSortBy!
       $filters: ActiveListingsFilters

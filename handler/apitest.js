@@ -21,7 +21,8 @@ function retriveMintInfo(onchainId, txs) {
     const { data } = await axios.post(
       "https://api.tensor.so/graphql",
       {
-        query: `query ActiveListingsV2(
+        query: `
+        query ActiveListingsV2(
             $slug: String!
             $sortBy: ActiveListingsSortBy!
             $filters: ActiveListingsFilters
