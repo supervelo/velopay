@@ -1,8 +1,10 @@
 const nftAbi = require("../abi/BaycNFTAbi.json");
 const { ethers } = require("ethers");
-
+const tensorQuery = require("../utils/tensorQuery");
+const { tensorSwapQuery } = require("../constants");
+const {VersionedTransaction} = require("@solana/web3.js")
 // we can't have things for sell now like usually platforms have bidding system for buying an nft
-const constructNFTransaction = (nftMeta) => {
+const constructNFTransaction = async (nftMeta) => {
   let operation = nftMeta.operation.toLowerCase();
   if(operation === "buy" || operation === "mint") {
     // buy when tokenId is provided else mint
@@ -19,7 +21,7 @@ const constructNFTransaction = (nftMeta) => {
       return constructNFTTransferTransaction(nftMeta);
     }
     case "buy": {
-        return constructNFTBuyTransaction(nftMeta);
+        return await constructNFTBuyTransaction(nftMeta);
     }
     case "sell": {
       return constructNFTSellTransaction(nftMeta)
@@ -91,35 +93,39 @@ const constructNFTTransferTransaction = (nftData) => {
   };
 };
 
-const constructNFTBuyTransaction = (nftData) => {
+const constructNFTBuyTransaction = async (nftData) => {
   // bunching down approve and transferFrom transaction transaction
-  if (
-    nftData.userAddress === "-" ||
-    nftData.toAddress === "-" ||
-    nftData.tokenId === "-"
-  )
-    return {
-      success: false,
-      context: `ATTENTION: The current bid price for BAYC NFT with token id 124 is 5.6 eth. The optimal bid based on older purchases could be 6.3 eth.` ,
-      transaction: [],
-    };
+  // if (
+  //   nftData.userAddress === "-" ||
+  //   nftData.toAddress === "-" ||
+  //   nftData.tokenId === "-"
+  // )
+  //   return {
+  //     success: false,
+  //     context: `ATTENTION: The current bid price for BAYC NFT with token id 124 is 5.6 eth. The optimal bid based on older purchases could be 6.3 eth.` ,
+  //     transaction: [],
+  //   };
 
-  const address = nftData.address;
-  const transferFromCode = new ethers.utils.Interface(
-    nftAbi
-  ).encodeFunctionData("transferFrom", [
-    nftData.userAddress, // this should be the owner address
-    nftData.toAddress, // this should be the caller address
-    nftData.tokenId,
-  ]);
+
+  // TODO: Construct nft buy tx here
+  const buyNFTFromListingQuery = tensorSwapQuery.buyNFTFromListing.query
+  const buyNFTFromListingVariable = tensorSwapQuery.buyNFTFromListing.variable
+  console.log(nftData)
+  buyNFTFromListingVariable["buyer"] = nftData.userAddress
+  buyNFTFromListingVariable["maxPrice"] = nftData.amount
+  buyNFTFromListingVariable["mint"] = nftData.tokenId
+  buyNFTFromListingVariable["owner"] = nftData.owner
+  const res = await tensorQuery(buyNFTFromListingQuery, buyNFTFromListingVariable);
+  console.log("encoded txxxx", Buffer.from(res.tcompBuyTx.txs[0].txV0.data).toString("base64"))
+  const tx = Buffer.from(res.tcompBuyTx.txs[0].txV0.data).toString("base64")
 
   return {
     success: true,
-    context: `This transaction will buy you a BAYC NFT of tokenid ${nftData.tokenId} which has been already approved for your ethereum address.`,
+    context: `This transaction will buy you ${nftData.name} of tokenid ${nftData.tokenId} which has been already approved for your solana address.`,
     transaction: [
       {
-        to: address,
-        data: transferFromCode,
+        // to: address,
+        data: tx,
         value: 0, // for now hardcoding it
       },
     ],

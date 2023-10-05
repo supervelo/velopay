@@ -183,7 +183,38 @@ const supportedTokenSwap = [
     'USDT': '0xc2132D05D31c914a87C6611C10748AEb04B58e8F'
   }
 ]
+// TODO: add support for readable name(actual Collection name as displayed in the website)
+const supportedTensorCollection = [
+  {
+    name: "Drop Nation",
+    slug: "a12fcd5d-2067-4e10-8ca2-e7ab4b342e32", // Id of the collection
+    slugDisplay: "drip_dropnation" // URL display
+  },
+  {
+    name: "DegenPoet",
+    slug: "e83d8eba-269e-4af8-889b-e26d4287fd52",
+    slugDisplay: "drip_degen_poet"
+  }
+]
 
+// For now from the query, we need to know if user want to buy, and get the token id
+// 1 -> slugDisplay
+// 2 -> buy or sell
+// 3 -> tokenId
+const tensorInfoExtracter = [
+  {
+    id: 1,
+    question: `The given statement talks about which NFT ${ONE_WORD_ANS} also ${INFO_NOT_AVALAIBLE}`,
+  },
+  {
+    id: 2,
+    question: `About which operation does the given statement talks about buy or sell if it is buying return answer as "buy" or if it is about selling return answer as "sell" ${ONE_WORD_ANS} also ${INFO_NOT_AVALAIBLE}`,
+  },
+  // {
+  //   id: 3,
+  //   question: `What is the tokenid of NFT user want's to buy ${ONE_WORD_ANS} also ${INFO_NOT_AVALAIBLE}`,
+  // },
+]
 const supportedTokenSwapGnosis = [
   {
     pair: ['XDAI', 'USDC'],
@@ -264,6 +295,77 @@ const bridgeInfoExtractor = [
   }
 ]
 
+let tensorSwapQuery = {
+  buyNFTFromListing: {
+    query: `
+    query TcompBuyTx(
+      $buyer: String!
+      $maxPrice: Decimal!
+      $mint: String!
+      $owner: String!
+    ) {
+      tcompBuyTx(buyer: $buyer, maxPrice: $maxPrice, mint: $mint, owner: $owner) {
+        txs {
+          tx
+          txV0 # use this if present!
+          lastValidBlockHeight
+        }
+      }
+    }`,
+    variable: { // Need modification for actual use
+      "buyer": "",
+      "maxPrice": "",
+      "mint": "",
+      "owner": ""
+    }
+  },
+  activeOrders: {
+    query: `
+    query ActiveListingsV2(
+      $slug: String!
+      $sortBy: ActiveListingsSortBy!
+      $filters: ActiveListingsFilters
+      $limit: Int
+      $cursor: ActiveListingsCursorInputV2
+    ) {
+      activeListingsV2(
+        slug: $slug
+        sortBy: $sortBy
+        filters: $filters
+        limit: $limit
+        cursor: $cursor
+      ) {
+        page {
+          endCursor {
+            str
+          }
+          hasMore
+        }
+        txs {
+          mint {
+            onchainId
+          }
+          tx {
+            sellerId
+            grossAmount
+            grossAmountUnit
+          }
+        }
+      }
+    }`,
+    variable: {
+      "slug": "",
+      "sortBy": "PriceAsc",
+      "filters": {
+        "sources": ["TENSORSWAP", "TCOMP"]
+      },
+      "limit": 10, // Max: 250
+      // To get more results, pass `page.endCursor` from the response
+      "cursor": null 
+    }
+  }
+}
+
 
 // for now we would whitelist all the NFT related information
 module.exports = {
@@ -280,5 +382,8 @@ module.exports = {
   supportedTokenToStake,
   bridgeInfoExtractor,
   supportedTokenSwapGnosis,
-  supportedTokenSwapSolana
+  supportedTokenSwapSolana,
+  supportedTensorCollection,
+  tensorInfoExtracter,
+  tensorSwapQuery
 };

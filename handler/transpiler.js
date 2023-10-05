@@ -13,14 +13,18 @@ const {
   supportTokenSend,
   supportedTokenSwap,
   bridgeInfoExtractor,
-  supportedTokenSwapSolana
-} = require("./contants");
+  supportedTokenSwapSolana,
+  supportedTensorCollection,
+  tensorInfoExtracter,
+  tensorSwapQuery
+} = require("./constants");
 const { getResponse } = require('./gpt/llm')
 const { isWordSimilar, isPairSimilar } = require('./utils/similarity')
 const { constructNFTransaction } = require('./transactions/nftTransactions');
 const { constructSendTransaction } = require("./transactions/tokenTransaction");
 const { constructSwapTransaction } = require('./transactions/swapTransaction')
-const { contructBridgeTransactionForStaking } = require('./transactions/bridgeAndStake')
+const { contructBridgeTransactionForStaking } = require('./transactions/bridgeAndStake');
+const tensorQuery = require("./utils/tensorQuery");
 
 const transpiler = async (currentStep, classifier, userAddress, chain) => {
 
@@ -82,14 +86,14 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
     console.log(' this is resp ', resp);
     return { ...resp, type: 'swap' };
 
-  } else if (context === "nft_buy" || context === "nft_sell") { // only on polygon testnet
+  } else if (context === "nft_buy") { // Can you purchase me 1 Drop Nation DRiP NFT ?
     // nftInfoExtracter
     console.log('extracting info');
 
     const nftInfo = [];
 
-    for(let i=0; i < nftInfoExtracter.length; i++) {
-        const resp = await getResponse(nftInfoExtracter[i].question, currentStep);
+    for(let i=0; i < tensorInfoExtracter.length; i++) {
+        const resp = await getResponse(tensorInfoExtracter[i].question, currentStep);
         nftInfo.push(resp);
     }
 
@@ -97,24 +101,44 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
     // 1 -> operation
     // 2 -> tokenId
     // 3 -> to  
-    const nftMeta = supportedNFTs.filter(data => isWordSimilar(data.name, nftInfo[0]));
+    const data = supportedTensorCollection.filter(d => isWordSimilar(d.name, nftInfo[0]));
+    console.log(data)
+    console.log(nftInfo[0])
+    if(data.length === 0) return "Insufficient details for nft operation";
 
-    if(nftMeta.length === 0) return "Insufficient details for nft operation";
+    // Get query info for API call
+    const nftMeta = data[0]
+    const collectionSlug = nftMeta.slug
+    const activeListingsQuery = tensorSwapQuery.activeOrders.query;
+    const activeListingVariable = tensorSwapQuery.activeOrders.variable
+    activeListingVariable["slug"] = collectionSlug
 
+    const res = await tensorQuery(activeListingsQuery, activeListingVariable);
+    console.log(res)
+    // 0 -> cheapest NFT available
+    const tokenId = res.activeListingsV2.txs[0].mint.onchainId;
+    const sellerId = res.activeListingsV2.txs[0].tx.sellerId
+    const grossAmount = res.activeListingsV2.txs[0].tx.grossAmount // In lamports
     const nftTransactionData = {
-        name: nftMeta[0].name,
-        address: nftMeta[0].address,
-        operation: nftInfo[1],
-        tokenId: nftInfo[2],
-        toAddress: nftInfo[3],
-        userAddress
+      operation: "buy",
+        name: nftMeta.name,
+        slug: nftMeta.slug,
+        tokenId: tokenId,
+        owner: sellerId,
+        amount: grossAmount,
+        userAddress: userAddress
+        // toAddress: nftInfo[3],
+        
     }
 
-    const resp = constructNFTransaction(nftTransactionData);
+    const resp = await constructNFTransaction(nftTransactionData);
     console.log('this is resp', resp);
 
-    return { ...resp, type: 'normal' };
-  } else if(context === 'transfer') { // polygon testnet
+    return { ...resp, type: 'nft_buy' };
+  } else if (context === "nft_sell") {
+    // TODO:
+  }
+  else if(context === 'transfer') { // polygon testnet
     console.log('extracting transfer info');
 
     const tokenSendInfo = [];

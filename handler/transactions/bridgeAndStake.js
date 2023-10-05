@@ -1,4 +1,4 @@
-const { supportedTokenToStake } = require('../contants')
+const { supportedTokenToStake } = require('../constants')
 const BananaAccount = require('../abi/BananaAccount.json')
 const { ethers } = require("ethers");
 const { AxelarQueryAPI, Environment, EvmChain, GasToken } = require('@axelar-network/axelarjs-sdk')
