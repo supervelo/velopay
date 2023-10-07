@@ -15,6 +15,6 @@ app.use(cors(corsOptions));
 
 app.use("/solve", solveRoute);
 
-app.listen(`0.0.0.0:${PORT}`, (req, res) => {
+app.listen(PORT, (req, res) => {
   console.log("Listening your req...");
 });
