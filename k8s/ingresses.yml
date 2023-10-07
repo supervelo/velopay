@@ -3,7 +3,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: valepay
+  name: velopay
   namespace: staging
 spec:
   ingressClassName: "nginx"
@@ -17,4 +17,4 @@ spec:
               service:
                 name: velopay
                 port:
-                  number: 80
+                  number: 8080

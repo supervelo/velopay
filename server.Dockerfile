@@ -12,7 +12,6 @@ COPY node_modules .
 
 COPY handler handler
 
-
 RUN pnpm install
 
 CMD [ "node","--trace-warnings", "--es-module-specifier-resolution=node", "/app/handler/index.js" ]
