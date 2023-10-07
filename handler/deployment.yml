@@ -23,7 +23,7 @@ spec:
           image: ${AWS_USER_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${CODENAME}/${NAMESPACE}/${CURRENT_SERVICE}:${TAG}
           envFrom:
             - secretRef:
-                name: balue
+                name: velopay
           imagePullPolicy: Always
           ports:
             - containerPort: 80
