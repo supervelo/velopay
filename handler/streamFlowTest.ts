@@ -63,7 +63,6 @@ const getTimestamp = () => {
         mint,
         wallet.publicKey
     );
-    console.log(recipentId.address.toString());
     const solanaParams: StreamflowSolana.ICreateStreamSolanaExt = {
         sender: wallet, // SignerWalletAdapter or Keypair of Sender account
         // isNative: // [optional] [WILL CREATE A wSOL STREAM] Wether Stream or Vesting should be paid with Solana native token or not
@@ -71,10 +70,10 @@ const getTimestamp = () => {
     const createStreamParams: Types.ICreateStreamData = {
         recipient: owner.toString(), // Recipient address.
         tokenId: "So11111111111111111111111111111111111111112", // Token mint address.
-        start: getTimestamp() + 10, // Timestamp (in seconds) when the stream/token vesting starts.
+        start: getTimestamp() + 30, // Timestamp (in seconds) when the stream/token vesting starts.
         amount: getBN(1, 9), // depositing 100 tokens with 9 decimals mint.
         period: 1, // Time step (period) in seconds per which the unlocking occurs.
-        cliff: getTimestamp() + 15, // Vesting contract "cliff" timestamp in seconds.
+        cliff: getTimestamp() + 30, // Vesting contract "cliff" timestamp in seconds.
         cliffAmount: new BN(0), // Amount unlocked at the "cliff" timestamp.
         amountPerPeriod: getBN(0.00001, 9), // Release rate: how many tokens are unlocked per each period.
         name: "Transfer to d Account.", // The stream name or subject.
@@ -87,6 +86,7 @@ const getTimestamp = () => {
         withdrawalFrequency: 10, // Relevant when automatic withdrawal is enabled. If greater than 0 our withdrawor will take care of withdrawals. If equal to 0 our withdrawor will skip, but everyone else can initiate withdrawals.
         partner: undefined, //  (optional) Partner's wallet address (string | undefined).
     };
+    console.log(createStreamParams)
     const { ixs, txId, metadataId } = await solanaClient.create(
         createStreamParams,
         solanaParams

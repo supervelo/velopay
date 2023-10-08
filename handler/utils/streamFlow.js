@@ -25,10 +25,10 @@ function createStreamParams(recipent, tokenId, amount, period, canTopup) {
         start: getTimestamp() + 10, // Timestamp (in seconds) when the stream/token vesting starts.
         amount: getBN(amount, 9), // depositing amount tokens with 9 decimals mint.
         period: getTimeStep(period), // Time step (period) in seconds per which the unlocking occurs.
-        cliff: getTimestamp() + 15, // Vesting contract "cliff" timestamp in seconds.
+        cliff: getTimestamp() + 25, // Vesting contract "cliff" timestamp in seconds.
         cliffAmount: new BN(0), // Amount unlocked at the "cliff" timestamp.
         amountPerPeriod: getBN(0.00001, 9), // Release rate: how many tokens are unlocked per each period.
-        name: `Streaming ${typeOfStream} to ${recipent}`, // The stream name or subject.
+        name: `Streaming ${typeOfStream}`, // The stream name or subject.
         canTopup: canTopup, // setting to FALSE will effectively create a vesting contract.
         cancelableBySender: true, // Whether or not sender can cancel the stream.
         cancelableByRecipient: false, // Whether or not recipient can cancel the stream.

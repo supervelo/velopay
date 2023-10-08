@@ -186,12 +186,12 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
         );
         if (tokenData.length === 0)
             return "Insufficient details for nft operation";
-        console.log(tokenData[0].programId);
+        console.log(tokenData[0].address)
         const streamTransactionData = {
             operation: "stream",
             name: streamInfo[0],
             recipent: streamInfo[1],
-            tokenId: tokenData.address,
+            tokenId: tokenData[0].address,
             amount: streamInfo[2],
             streamType: streamInfo[3],
             unlockInterval: streamInfo[4],

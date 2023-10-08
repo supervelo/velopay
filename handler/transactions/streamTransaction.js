@@ -32,20 +32,13 @@ const constructStreamTransaction = async (streamMeta) => {
         streamDuration,
     } = streamMeta;
     const canTopup = streamType == "payment" ? true : false;
-    const streamParams = createStreamParams(
-        recipent,
-        tokenId,
-        amount,
-        unlockInterval,
-        canTopup
-    );
     return {
         success: true,
         context: `This transaction would create a stream ${streamType} of ${amount} ${name} token from your Solana account to ${recipent} that will unlock every ${unlockInterval} that last ${streamDuration[0]} ${streamDuration[1]}`,
         transaction: [
             {
                 to: streamMeta.programId,
-                data: streamParams,
+                data: streamMeta,
                 value: streamMeta.amount,
             },
         ],

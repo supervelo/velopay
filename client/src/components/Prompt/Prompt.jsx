@@ -20,9 +20,11 @@ import {
   sendAndConfirmTransaction,
   clusterApiUrl,
   PublicKey,
+  Keypair,
+  Connection,
 } from "@solana/web3.js";
+import bs58 from "bs58";
 import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
-import { StreamflowSolana } from "@streamflow/stream";
 import {
   WalletModalProvider,
   WalletDisconnectButton,
@@ -31,8 +33,18 @@ import {
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { saveToLocalStorage } from "../../utils/saveToLocalstorage";
 import { ReactSearchAutocomplete } from "react-search-autocomplete";
-// import { AutoComplete } from "react-autocomplete";
+const {
+  StreamflowSolana,
+  Types,
+  GenericStreamClient,
+  getBN,
+  getNumberFromBN,
+} = require("@streamflow/stream");
+const { BN } = require("bn.js");
 
+const getTimestamp = () => {
+  return Math.floor(Date.now() / 1000);
+};
 const PromptComponent = () => {
   const items = [
     {
@@ -215,7 +227,11 @@ const PromptComponent = () => {
         const txid = await sendAndConfirmTransaction(connection, signedTx);
         console.log(`https://solscan.io/tx/${txid}`);
       }
-      if (txnType == "stream") {
+      if (txnType === "stream") {
+        console.log("abc", process.env.TESTING_PRIVATE_KEY);
+        let connection = new Connection(clusterApiUrl("devnet"), {
+          commitment: "confirmed",
+        });
         // Only works on devnet
         const solanaClient = new StreamflowSolana.SolanaStreamClient(
           clusterApiUrl("devnet"),
@@ -234,6 +250,7 @@ const PromptComponent = () => {
           mint,
           owner
         );
+
         const senderId = await getOrCreateAssociatedTokenAccount(
           connection,
           wallet,
@@ -244,7 +261,38 @@ const PromptComponent = () => {
           sender: wallet, // SignerWalletAdapter or Keypair of Sender account
           // isNative: // [optional] [WILL CREATE A wSOL STREAM] Wether Stream or Vesting should be paid with Solana native token or not
         };
-        let createStreamParams = transactions[0].data;
+        // let createStreamParams = transactions[0].data;
+        const streamMeta = transactions[0].data;
+        const {
+          name,
+          recipent,
+          tokenId,
+          amount,
+          streamType,
+          unlockInterval,
+          streamDuration,
+        } = streamMeta;
+        let canTopup = streamType == "payment";
+        const createStreamParams = {
+          recipient: recipent, // Recipient address.
+          tokenId: tokenId, // Token mint address.
+          start: getTimestamp() + 30, // Timestamp (in seconds) when the stream/token vesting starts.
+          amount: getBN(parseFloat(amount), 9), // depositing 100 tokens with 9 decimals mint.
+          period: 1, // Time step (period) in seconds per which the unlocking occurs.
+          cliff: getTimestamp() + 30, // Vesting contract "cliff" timestamp in seconds.
+          cliffAmount: new BN(0), // Amount unlocked at the "cliff" timestamp.
+          amountPerPeriod: getBN(parseFloat(0.00001), 9), // Release rate: how many tokens are unlocked per each period.
+          name: `Stream ${streamType}`, // The stream name or subject.
+          canTopup: canTopup, // setting to FALSE will effectively create a vesting contract.
+          cancelableBySender: true, // Whether or not sender can cancel the stream.
+          cancelableByRecipient: false, // Whether or not recipient can cancel the stream.
+          transferableBySender: true, // Whether or not sender can transfer the stream.
+          transferableByRecipient: false, // Whether or not recipient can transfer the stream.
+          automaticWithdrawal: true, // Whether or not a 3rd party (e.g. cron job, "cranker") can initiate a token withdraw/transfer.
+          withdrawalFrequency: 10, // Relevant when automatic withdrawal is enabled. If greater than 0 our withdrawor will take care of withdrawals. If equal to 0 our withdrawor will skip, but everyone else can initiate withdrawals.
+          partner: undefined, //  (optional) Partner's wallet address (string | undefined).
+        };
+        console.log("abcabc", createStreamParams);
         const { ixs, txId, metadataId } = await solanaClient.create(
           createStreamParams,
           solanaParams
