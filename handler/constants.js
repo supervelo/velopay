@@ -236,27 +236,23 @@ const streamInfoExtractor = [
     },
     {
         id: 2,
-        question: `About which operation does the given statement talks about buy or sell if it is buying return answer as "buy" or if it is about selling return answer as "sell" ${ONE_WORD_ANS} also ${INFO_NOT_AVALAIBLE}`,
-    },
-    {
-        id: 3,
         question: `In the given statement, what is the recipent address that the user want to send token to ${ONE_WORD_ANS} also ${INFO_NOT_AVALAIBLE}`,
     },
     {
-        id: 4,
+        id: 3,
         question: `In the given statement how many tokens the user wants to send ${ONE_WORD_ANS} also ${INFO_NOT_AVALAIBLE}`,
     },
     {
+        id: 4,
+        question: `In the given statement does the user specify if the stream are "payment" or "vesting" ${ONE_WORD_ANS} also ${INFO_NOT_AVALAIBLE}`,
+    },
+    {
         id: 5,
-        question: `In the given statement does the user specify if the stream are payment or vesting ${ONE_WORD_ANS} also ${INFO_NOT_AVALAIBLE}`,
+        question: `In the given statement what is the unlocking interval(like every second, every minute...) that user ask for, in a pre-determined list of (second, minute, hour, day, month, quarter, year) ${ONE_WORD_ANS} also ${INFO_NOT_AVALAIBLE}`,
     },
     {
         id: 6,
-        question: `In the given statement what is the unlocking interval user ask for, in a pre-determined list of (second, minute, hour, day, month, quarter, year) ${ONE_WORD_ANS} also ${INFO_NOT_AVALAIBLE}`,
-    },
-    {
-        id: 7,
-        question: `In the given statement how long does the stream last, answer it in form of 2-element array, the first element is the number, the second element is one of these word (second, minute, hour, day, month, quarter, year) also ${INFO_NOT_AVALAIBLE}`,
+        question: `In the given statement how long does the stream last, answer it in form of 2-element array, for example ["1", "year"], the first element is the number, the second element is one of these word (second, minute, hour, day, month, quarter, year) also ${INFO_NOT_AVALAIBLE}`,
     },
 ];
 const supportedTokenSwapGnosis = [
@@ -272,6 +268,16 @@ const supportedTokenSwapGnosis = [
     },
 ];
 
+const supportedTokenStream = [
+    {
+        name: "SOL",
+        address: "So11111111111111111111111111111111111111112", // Wrapped SOL,
+        programId: {
+            devnet: "HqDGZjaVRXJ9MGRQEw7qDc2rAr6iH1n1kAQdCZaCMfMZ",
+            mainnet: "strmRqUCoQUgGUan5YhzUZa6KqdzwX5L6FpUxfmKg5m",
+        },
+    },
+];
 const supportedTokenSwapSolana = [
     // pair: [<tokenIn>, <tokenOut>]
     {
@@ -431,4 +437,5 @@ module.exports = {
     tensorInfoExtracter,
     tensorSwapQuery,
     streamInfoExtractor,
+    supportedTokenStream,
 };

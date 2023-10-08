@@ -63,7 +63,6 @@ const getTimestamp = () => {
         mint,
         wallet.publicKey
     );
-    console.log(getBN(1, 4));
     console.log(recipentId.address.toString());
     const solanaParams: StreamflowSolana.ICreateStreamSolanaExt = {
         sender: wallet, // SignerWalletAdapter or Keypair of Sender account
