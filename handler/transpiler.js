@@ -176,7 +176,6 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
         const streamInfo = [
             "SOL",
             "4WMjxRZ1HhX4RhZ1fiohpwUTmjeCudQhwYogzvqHKSjh",
-            "So11111111111111111111111111111111111111112",
             1,
             "payment",
             "second",
@@ -185,7 +184,6 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
         const tokenData = supportedTokenStream.filter((d) =>
             isWordSimilar(d.name, streamInfo[0])
         );
-
         if (tokenData.length === 0)
             return "Insufficient details for nft operation";
         console.log(tokenData[0].programId);

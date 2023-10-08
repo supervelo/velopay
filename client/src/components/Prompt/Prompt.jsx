@@ -18,7 +18,11 @@ import { FaRegCopy } from "react-icons/fa";
 import {
   VersionedTransaction,
   sendAndConfirmTransaction,
+  clusterApiUrl,
+  PublicKey,
 } from "@solana/web3.js";
+import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
+import { StreamflowSolana } from "@streamflow/stream";
 import {
   WalletModalProvider,
   WalletDisconnectButton,
@@ -68,12 +72,12 @@ const PromptComponent = () => {
     connected,
     disconnecting,
   } = useWallet();
+  const wallet = useWallet();
   const { connection } = useConnection();
   const [walletAddress, setWalletAddress] = useState("");
   const [bananaSdkInstance, setBananSdkInstance] = useState(null);
   const [transactions, setTransactions] = useState();
   const [isLoading, setIsLoading] = useState(false);
-  const [walletInstance, setWalletInstance] = useState(null);
   const [output, setOutput] = useState("Welcome to Banana Demo");
   const [intent, setIntent] = useState("");
   const [confirmModa, setConfirmModal] = useState(false);
@@ -153,31 +157,6 @@ const PromptComponent = () => {
     setBananSdkInstance(bananaInstance);
   };
 
-  const createWallet = async () => {
-    setIsLoading(true);
-    const wallet = await bananaSdkInstance.createWallet();
-    setWalletInstance(wallet);
-    const address = await wallet.getAddress();
-    setWalletAddress(address);
-    setOutput("Wallet Address: " + address);
-    setIsLoading(false);
-  };
-
-  const connectWallet = async () => {
-    const walletName = bananaSdkInstance.getWalletName();
-    if (walletName) {
-      setIsLoading(true);
-      const wallet = await bananaSdkInstance.connectWallet(walletName);
-      setWalletInstance(wallet);
-      const address = await wallet.getAddress();
-      setWalletAddress(address);
-      setOutput("Wallet Address: " + address);
-      setIsLoading(false);
-    } else {
-      createWallet();
-    }
-  };
-
   const closeModal = () => {
     setConfirmModal(false);
     setIsLoading(false);
@@ -235,6 +214,42 @@ const PromptComponent = () => {
         const signedTx = await signTransaction(transaction);
         const txid = await sendAndConfirmTransaction(connection, signedTx);
         console.log(`https://solscan.io/tx/${txid}`);
+      }
+      if (txnType == "stream") {
+        // Only works on devnet
+        const solanaClient = new StreamflowSolana.SolanaStreamClient(
+          clusterApiUrl("devnet"),
+          undefined,
+          undefined,
+          "HqDGZjaVRXJ9MGRQEw7qDc2rAr6iH1n1kAQdCZaCMfMZ"
+        );
+        let mint = new PublicKey("So11111111111111111111111111111111111111112");
+        let owner = new PublicKey(
+          "4WMjxRZ1HhX4RhZ1fiohpwUTmjeCudQhwYogzvqHKSjh"
+        );
+        // create ATA if not exists
+        const recipentId = await getOrCreateAssociatedTokenAccount(
+          connection,
+          wallet,
+          mint,
+          owner
+        );
+        const senderId = await getOrCreateAssociatedTokenAccount(
+          connection,
+          wallet,
+          mint,
+          wallet.publicKey
+        );
+        const solanaParams = {
+          sender: wallet, // SignerWalletAdapter or Keypair of Sender account
+          // isNative: // [optional] [WILL CREATE A wSOL STREAM] Wether Stream or Vesting should be paid with Solana native token or not
+        };
+        let createStreamParams = transactions[0].data;
+        const { ixs, txId, metadataId } = await solanaClient.create(
+          createStreamParams,
+          solanaParams
+        ); // second argument differ depending on a chain
+        console.log(`${ixs}\n${txId}\n${metadataId}`);
       }
 
       // sendBatchTransaction handler?
