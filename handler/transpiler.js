@@ -17,12 +17,17 @@ const {
     supportedTensorCollection,
     tensorInfoExtracter,
     tensorSwapQuery,
+    streamInfoExtractor,
+    supportedTokenStream,
 } = require("./constants");
 const { getResponse } = require("./gpt/llm");
 const { isWordSimilar, isPairSimilar } = require("./utils/similarity");
 const { constructNFTransaction } = require("./transactions/nftTransactions");
 const { constructSendTransaction } = require("./transactions/tokenTransaction");
 const { constructSwapTransaction } = require("./transactions/swapTransaction");
+const {
+    constructStreamTransaction,
+} = require("./transactions/streamTransaction");
 const {
     contructBridgeTransactionForStaking,
 } = require("./transactions/bridgeAndStake");
@@ -152,58 +157,55 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
         // streamInfoExtractor
         console.log("extracting info");
 
-        const nftInfo = [];
+        // const streamInfo = [];
 
-        for (let i = 0; i < streamInfoExtractor.length; i++) {
-            const resp = await getResponse(
-                tensorInfoExtracter[i].question,
-                currentStep
-            );
-            nftInfo.push(resp);
-        }
-
-        // 0 -> name
-        // 1 -> operation
-        // 2 -> tokenId
-        // 3 -> to
-        const data = supportedTensorCollection.filter((d) =>
-            isWordSimilar(d.name, nftInfo[0])
+        // for (let i = 0; i < streamInfoExtractor.length; i++) {
+        //     const resp = await getResponse(
+        //         streamInfoExtractor[i].question,
+        //         currentStep
+        //     );
+        //     streamInfo.push(resp);
+        // }
+        // console.log(streamInfo);
+        // 0 -> token name
+        // 1 -> recipent address
+        // 2 -> token amount
+        // 3 -> type of stream
+        // 4 -> unlocking interval (enftInfovery second, minute,...)
+        // 5 -> streaming duration -> 0: number, 1: duration(second, minute,...)
+        const streamInfo = [
+            "SOL",
+            "4WMjxRZ1HhX4RhZ1fiohpwUTmjeCudQhwYogzvqHKSjh",
+            "So11111111111111111111111111111111111111112",
+            1,
+            "payment",
+            "second",
+            ["3", "months"],
+        ];
+        const tokenData = supportedTokenStream.filter((d) =>
+            isWordSimilar(d.name, streamInfo[0])
         );
-        console.log(data);
-        console.log(nftInfo[0]);
-        if (data.length === 0) return "Insufficient details for nft operation";
 
-        // Get query info for API call
-        const nftMeta = data[0];
-        const collectionSlug = nftMeta.slug;
-        const activeListingsQuery = tensorSwapQuery.activeOrders.query;
-        const activeListingVariable = tensorSwapQuery.activeOrders.variable;
-        activeListingVariable["slug"] = collectionSlug;
-
-        const res = await tensorQuery(
-            activeListingsQuery,
-            activeListingVariable
-        );
-        console.log(res);
-        // 0 -> cheapest NFT available
-        const tokenId = res.activeListingsV2.txs[0].mint.onchainId;
-        const sellerId = res.activeListingsV2.txs[0].tx.sellerId;
-        const grossAmount = res.activeListingsV2.txs[0].tx.grossAmount; // In lamports
-        const nftTransactionData = {
-            operation: "buy",
-            name: nftMeta.name,
-            slug: nftMeta.slug,
-            tokenId: tokenId,
-            owner: sellerId,
-            amount: grossAmount,
-            userAddress: userAddress,
+        if (tokenData.length === 0)
+            return "Insufficient details for nft operation";
+        console.log(tokenData[0].programId);
+        const streamTransactionData = {
+            operation: "stream",
+            name: streamInfo[0],
+            recipent: streamInfo[1],
+            tokenId: tokenData.address,
+            amount: streamInfo[2],
+            streamType: streamInfo[3],
+            unlockInterval: streamInfo[4],
+            streamDuration: streamInfo[5],
+            programId: tokenData[0].programId.devnet, // TODO: add support for choose cluster
             // toAddress: nftInfo[3],
         };
 
-        const resp = await constructNFTransaction(nftTransactionData);
+        const resp = await constructStreamTransaction(streamTransactionData);
         console.log("this is resp", resp);
 
-        return { ...resp, type: "nft_buy" };
+        return { ...resp, type: "stream" };
     } else if (context === "transfer") {
         // polygon testnet
         console.log("extracting transfer info");
