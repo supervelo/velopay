@@ -33,6 +33,7 @@ import {
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { saveToLocalStorage } from "../../utils/saveToLocalstorage";
 import { ReactSearchAutocomplete } from "react-search-autocomplete";
+import { getTimeStep } from "../../utils/stream";
 const {
   StreamflowSolana,
   Types,
@@ -228,10 +229,9 @@ const PromptComponent = () => {
         console.log(`https://solscan.io/tx/${txid}`);
       }
       if (txnType === "stream") {
-        console.log("abc", process.env.TESTING_PRIVATE_KEY);
-        let connection = new Connection(clusterApiUrl("devnet"), {
-          commitment: "confirmed",
-        });
+        // let connection = new Connection(clusterApiUrl("devnet"), {
+        //   commitment: "confirmed",
+        // });
         // Only works on devnet
         const solanaClient = new StreamflowSolana.SolanaStreamClient(
           clusterApiUrl("devnet"),
@@ -278,7 +278,7 @@ const PromptComponent = () => {
           tokenId: tokenId, // Token mint address.
           start: getTimestamp() + 30, // Timestamp (in seconds) when the stream/token vesting starts.
           amount: getBN(parseFloat(amount), 9), // depositing 100 tokens with 9 decimals mint.
-          period: 1, // Time step (period) in seconds per which the unlocking occurs.
+          period: getTimeStep(unlockInterval), // Time step (period) in seconds per which the unlocking occurs.
           cliff: getTimestamp() + 30, // Vesting contract "cliff" timestamp in seconds.
           cliffAmount: new BN(0), // Amount unlocked at the "cliff" timestamp.
           amountPerPeriod: getBN(parseFloat(0.00001), 9), // Release rate: how many tokens are unlocked per each period.

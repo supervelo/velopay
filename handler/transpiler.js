@@ -157,30 +157,22 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
         // streamInfoExtractor
         console.log("extracting info");
 
-        // const streamInfo = [];
+        const streamInfo = [];
 
-        // for (let i = 0; i < streamInfoExtractor.length; i++) {
-        //     const resp = await getResponse(
-        //         streamInfoExtractor[i].question,
-        //         currentStep
-        //     );
-        //     streamInfo.push(resp);
-        // }
-        // console.log(streamInfo);
+        for (let i = 0; i < streamInfoExtractor.length; i++) {
+            const resp = await getResponse(
+                streamInfoExtractor[i].question,
+                currentStep
+            );
+            streamInfo.push(resp);
+        }
+        console.log(streamInfo);
         // 0 -> token name
         // 1 -> recipent address
         // 2 -> token amount
         // 3 -> type of stream
         // 4 -> unlocking interval (enftInfovery second, minute,...)
         // 5 -> streaming duration -> 0: number, 1: duration(second, minute,...)
-        const streamInfo = [
-            "SOL",
-            "4WMjxRZ1HhX4RhZ1fiohpwUTmjeCudQhwYogzvqHKSjh",
-            1,
-            "payment",
-            "second",
-            ["3", "months"],
-        ];
         const tokenData = supportedTokenStream.filter((d) =>
             isWordSimilar(d.name, streamInfo[0])
         );
@@ -195,7 +187,7 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
             amount: streamInfo[2],
             streamType: streamInfo[3],
             unlockInterval: streamInfo[4],
-            streamDuration: streamInfo[5],
+            streamDuration: JSON.parse(streamInfo[5]),
             programId: tokenData[0].programId.devnet, // TODO: add support for choose cluster
             // toAddress: nftInfo[3],
         };
