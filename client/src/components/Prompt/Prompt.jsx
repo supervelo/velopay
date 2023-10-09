@@ -281,7 +281,10 @@ const PromptComponent = () => {
           period: getTimeStep(unlockInterval), // Time step (period) in seconds per which the unlocking occurs.
           cliff: getTimestamp() + 30, // Vesting contract "cliff" timestamp in seconds.
           cliffAmount: new BN(0), // Amount unlocked at the "cliff" timestamp.
-          amountPerPeriod: getBN(parseFloat(0.00001), 9), // Release rate: how many tokens are unlocked per each period.
+          amountPerPeriod: getBN(
+            parseFloat((amount * getTimeStep(unlockInterval)) / streamDuration),
+            9
+          ), // Release rate: how many tokens are unlocked per each period.
           name: `Stream ${streamType}`, // The stream name or subject.
           canTopup: canTopup, // setting to FALSE will effectively create a vesting contract.
           cancelableBySender: true, // Whether or not sender can cancel the stream.
@@ -292,7 +295,6 @@ const PromptComponent = () => {
           withdrawalFrequency: 10, // Relevant when automatic withdrawal is enabled. If greater than 0 our withdrawor will take care of withdrawals. If equal to 0 our withdrawor will skip, but everyone else can initiate withdrawals.
           partner: undefined, //  (optional) Partner's wallet address (string | undefined).
         };
-        console.log("abcabc", createStreamParams);
         const { ixs, txId, metadataId } = await solanaClient.create(
           createStreamParams,
           solanaParams
