@@ -233,35 +233,13 @@ const PromptComponent = () => {
         //   commitment: "confirmed",
         // });
         // Only works on devnet
+        const STREAM_FLOW_DEVNET_PROGRAM_ID = "HqDGZjaVRXJ9MGRQEw7qDc2rAr6iH1n1kAQdCZaCMfMZ"
         const solanaClient = new StreamflowSolana.SolanaStreamClient(
           clusterApiUrl("devnet"),
           undefined,
           undefined,
-          "HqDGZjaVRXJ9MGRQEw7qDc2rAr6iH1n1kAQdCZaCMfMZ"
+          STREAM_FLOW_DEVNET_PROGRAM_ID
         );
-        let mint = new PublicKey("So11111111111111111111111111111111111111112");
-        let owner = new PublicKey(
-          "4WMjxRZ1HhX4RhZ1fiohpwUTmjeCudQhwYogzvqHKSjh"
-        );
-        // create ATA if not exists
-        const recipentId = await getOrCreateAssociatedTokenAccount(
-          connection,
-          wallet,
-          mint,
-          owner
-        );
-
-        const senderId = await getOrCreateAssociatedTokenAccount(
-          connection,
-          wallet,
-          mint,
-          wallet.publicKey
-        );
-        const solanaParams = {
-          sender: wallet, // SignerWalletAdapter or Keypair of Sender account
-          // isNative: // [optional] [WILL CREATE A wSOL STREAM] Wether Stream or Vesting should be paid with Solana native token or not
-        };
-        // let createStreamParams = transactions[0].data;
         const streamMeta = transactions[0].data;
         const {
           name,
@@ -272,6 +250,32 @@ const PromptComponent = () => {
           unlockInterval,
           streamDuration,
         } = streamMeta;
+        // create ATA if not exists
+        let mint = new PublicKey(tokenId);
+        const recipentId = await getOrCreateAssociatedTokenAccount(
+          connection,
+          wallet,
+          mint,
+          recipent,
+          false,
+          "finalized"
+        );
+        const senderId = await getOrCreateAssociatedTokenAccount(
+          connection,
+          wallet,
+          mint,
+          wallet.publicKey,
+          false,
+          "finalized"
+        );
+
+        
+        const solanaParams = {
+          sender: wallet, // SignerWalletAdapter or Keypair of Sender account
+          // isNative: // [optional] [WILL CREATE A wSOL STREAM] Wether Stream or Vesting should be paid with Solana native token or not
+        };
+
+        // Stream params
         let canTopup = streamType == "payment";
         const createStreamParams = {
           recipient: recipent, // Recipient address.
