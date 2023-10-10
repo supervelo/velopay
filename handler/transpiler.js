@@ -157,15 +157,23 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
         // streamInfoExtractor
         console.log("extracting info");
 
-        const streamInfo = [];
+        // const streamInfo = [];
 
-        for (let i = 0; i < streamInfoExtractor.length; i++) {
-            const resp = await getResponse(
-                streamInfoExtractor[i].question,
-                currentStep
-            );
-            streamInfo.push(resp);
-        }
+        // for (let i = 0; i < streamInfoExtractor.length; i++) {
+        //     const resp = await getResponse(
+        //         streamInfoExtractor[i].question,
+        //         currentStep
+        //     );
+        //     streamInfo.push(resp);
+        // }
+        const streamInfo = [
+            "SOL",
+            "4WMjxRZ1HhX4RhZ1fiohpwUTmjeCudQhwYogzvqHKSjh",
+            1,
+            "payment",
+            "second",
+            '["3", "months"]',
+        ];
         console.log(streamInfo);
         // 0 -> token name
         // 1 -> recipent address
@@ -177,7 +185,7 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
             isWordSimilar(d.name, streamInfo[0])
         );
         if (tokenData.length === 0)
-            return "Insufficient details for nft operation";
+            return "Insufficient details for stream operation";
         console.log(tokenData[0].address)
         const streamTransactionData = {
             operation: "stream",

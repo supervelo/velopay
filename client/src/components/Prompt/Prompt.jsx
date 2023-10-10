@@ -22,9 +22,19 @@ import {
   PublicKey,
   Keypair,
   Connection,
+  Transaction,
+  SystemProgram,
+  LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
+import {
+  getOrCreateAssociatedTokenAccount,
+  createSyncNativeInstruction,
+  createAssociatedTokenAccountInstruction,
+  getAssociatedTokenAddress,
+  getAccount,
+  createTransferInstruction,
+} from "@solana/spl-token";
 import bs58 from "bs58";
-import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 import {
   WalletModalProvider,
   WalletDisconnectButton,
@@ -229,11 +239,12 @@ const PromptComponent = () => {
         console.log(`https://solscan.io/tx/${txid}`);
       }
       if (txnType === "stream") {
-        // let connection = new Connection(clusterApiUrl("devnet"), {
-        //   commitment: "confirmed",
-        // });
+        let transactionInstructions = [];
+        const block = await connection.getLatestBlockhash("finalized");
+
         // Only works on devnet
-        const STREAM_FLOW_DEVNET_PROGRAM_ID = "HqDGZjaVRXJ9MGRQEw7qDc2rAr6iH1n1kAQdCZaCMfMZ"
+        const STREAM_FLOW_DEVNET_PROGRAM_ID =
+          "HqDGZjaVRXJ9MGRQEw7qDc2rAr6iH1n1kAQdCZaCMfMZ";
         const solanaClient = new StreamflowSolana.SolanaStreamClient(
           clusterApiUrl("devnet"),
           undefined,
@@ -241,7 +252,7 @@ const PromptComponent = () => {
           STREAM_FLOW_DEVNET_PROGRAM_ID
         );
         const streamMeta = transactions[0].data;
-        const {
+        let {
           name,
           recipent,
           tokenId,
@@ -251,25 +262,75 @@ const PromptComponent = () => {
           streamDuration,
         } = streamMeta;
         // create ATA if not exists
-        let mint = new PublicKey(tokenId);
-        const recipentId = await getOrCreateAssociatedTokenAccount(
-          connection,
-          wallet,
-          mint,
-          recipent,
-          false,
-          "finalized"
+        let mintToken = new PublicKey(tokenId);
+        let recipentAddr = new PublicKey(recipent);
+        const associatedTokenTo = await getAssociatedTokenAddress(
+          mintToken,
+          recipentAddr
         );
-        const senderId = await getOrCreateAssociatedTokenAccount(
-          connection,
-          wallet,
-          mint,
-          wallet.publicKey,
-          false,
-          "finalized"
+        if (!(await connection.getAccountInfo(associatedTokenTo))) {
+          transactionInstructions.push(
+            createAssociatedTokenAccountInstruction(
+              publicKey,
+              associatedTokenTo,
+              recipentAddr,
+              mintToken
+            )
+          );
+        }
+        const associatedTokenFrom = await getAssociatedTokenAddress(
+          mintToken,
+          publicKey
         );
+        if (!(await connection.getAccountInfo(associatedTokenFrom))) {
+          transactionInstructions.push(
+            createAssociatedTokenAccountInstruction(
+              publicKey,
+              associatedTokenFrom,
+              publicKey,
+              mintToken
+            )
+          );
+        }
+        // transactionInstructions.push(
+        //   createTransferInstruction(
+        //     associatedTokenFrom, // source
+        //     associatedTokenTo, // dest
+        //     publicKey,
+        //     1000000000 // transfer 1 USDC, USDC on solana devnet has 6 decimal
+        //   )
+        // );
+        const transaction = new Transaction().add(...transactionInstructions);
 
-        
+        const signature = await configureAndSendCurrentTransaction(
+          transaction,
+          connection,
+          publicKey,
+          signTransaction
+        );
+        console.log(" abcde", signature);
+        // recipentATA = await getAssociatedTokenAddress(mint, recipent);
+        // senderATA = await getAssociatedTokenAddress(mint, wallet.publicKey);
+        // // If not enough wSOL, proceed to convert
+        // let tokenAmount = await connection.getTokenAccountBalance(
+        //   senderATA.address
+        // );
+        // if (tokenAmount.uiAmount <= parseFloat(amount)) {
+        //   // Auto convert SOL to wSOL
+        //   tx = new Transaction().add(
+        //     // trasnfer SOL
+        //     SystemProgram.transfer({
+        //       fromPubkey: wallet.publicKey,
+        //       toPubkey: senderATA,
+        //       lamports:
+        //         (parseFloat(amount) - tokenAmount.uiAmount) * LAMPORTS_PER_SOL,
+        //     }),
+        //     // sync wrapped SOL balance
+        //     createSyncNativeInstruction(senderATA.address)
+        //   );
+        //   await sendAndConfirmTransaction(connection, tx, [wallet]);
+        // }
+
         const solanaParams = {
           sender: wallet, // SignerWalletAdapter or Keypair of Sender account
           // isNative: // [optional] [WILL CREATE A wSOL STREAM] Wether Stream or Vesting should be paid with Solana native token or not
@@ -536,5 +597,22 @@ const PromptComponent = () => {
     </div>
   );
 };
-
+const configureAndSendCurrentTransaction = async (
+  transaction,
+  connection,
+  feePayer,
+  signTransaction
+) => {
+  const blockHash = await connection.getLatestBlockhash();
+  transaction.feePayer = feePayer;
+  transaction.recentBlockhash = blockHash.blockhash;
+  const signed = await signTransaction(transaction);
+  const signature = await connection.sendRawTransaction(signed.serialize());
+  await connection.confirmTransaction({
+    blockhash: blockHash.blockhash,
+    lastValidBlockHeight: blockHash.lastValidBlockHeight,
+    signature,
+  });
+  return signature;
+};
 export default PromptComponent;
