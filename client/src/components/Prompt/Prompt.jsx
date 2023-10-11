@@ -260,16 +260,16 @@ const PromptComponent = () => {
           mintToken,
           recipentAddr
         );
-        // if (!(await connection.getAccountInfo(associatedTokenTo))) {
-        //   transactionInstructions.push(
-        //     createAssociatedTokenAccountInstruction(
-        //       publicKey,
-        //       associatedTokenTo,
-        //       recipentAddr,
-        //       mintToken
-        //     )
-        //   );
-        // }
+        if (!(await connection.getAccountInfo(associatedTokenTo))) {
+          transactionInstructions.push(
+            createAssociatedTokenAccountInstruction(
+              publicKey,
+              associatedTokenTo,
+              recipentAddr,
+              mintToken
+            )
+          );
+        }
         const associatedTokenFrom = await getAssociatedTokenAddress(
           mintToken,
           publicKey
