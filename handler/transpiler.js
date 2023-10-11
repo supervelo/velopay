@@ -157,26 +157,26 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
         // streamInfoExtractor
         console.log("extracting info");
 
-        // const streamInfo = [];
+        const streamInfo = [];
 
-        // for (let i = 0; i < streamInfoExtractor.length; i++) {
-        //     const resp = await getResponse(
-        //         streamInfoExtractor[i].question,
-        //         currentStep
-        //     );
-        //     streamInfo.push(resp);
-        // }
+        for (let i = 0; i < streamInfoExtractor.length; i++) {
+            const resp = await getResponse(
+                streamInfoExtractor[i].question,
+                currentStep
+            );
+            streamInfo.push(resp);
+        }
 
-        
-        // Dummy data
-        const streamInfo = [
-            "SOL",
-            "4WMjxRZ1HhX4RhZ1fiohpwUTmjeCudQhwYogzvqHKSjh",
-            1,
-            "payment",
-            "second",
-            '["3", "months"]',
-        ];
+
+        // // Dummy data
+        // const streamInfo = [
+        //     "SOL",
+        //     "4WMjxRZ1HhX4RhZ1fiohpwUTmjeCudQhwYogzvqHKSjh",
+        //     1,
+        //     "payment",
+        //     "second",
+        //     '["3", "months"]',
+        // ];
         console.log(streamInfo);
         // 0 -> token name
         // 1 -> recipent address

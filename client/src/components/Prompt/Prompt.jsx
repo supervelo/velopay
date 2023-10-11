@@ -240,9 +240,9 @@ const PromptComponent = () => {
       }
       if (txnType === "stream") {
         let transactionInstructions = [];
+        // TODO: change program id based on cluster
         const STREAM_FLOW_DEVNET_PROGRAM_ID =
           "HqDGZjaVRXJ9MGRQEw7qDc2rAr6iH1n1kAQdCZaCMfMZ";
-
         const streamMeta = transactions[0].data;
         let {
           name,
@@ -288,7 +288,7 @@ const PromptComponent = () => {
 
         let transferIx = SystemProgram.transfer({
           fromPubkey: publicKey,
-          lamports: parseFloat(amount) * LAMPORTS_PER_SOL * 1.05, //TODO: streamflow fee
+          lamports: parseFloat(amount) * LAMPORTS_PER_SOL * 1.05, //TODO: handle convert to wSOL better
           toPubkey: associatedTokenFrom,
         });
         let syncIx = createSyncNativeInstruction(associatedTokenFrom);

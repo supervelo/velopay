@@ -31,7 +31,6 @@ const constructStreamTransaction = async (streamMeta) => {
         unlockInterval,
         streamDuration,
     } = streamMeta;
-    const canTopup = streamType == "payment" ? true : false;
     return {
         success: true,
         context: `This transaction might create a wSOL account which would convert ${amount} SOL to ${amount} WSOL(Wrapped SOL) and then \n create a stream ${streamType} of ${amount} ${name} token from your Solana account to ${recipent} that will unlock every ${unlockInterval} that last ${streamDuration[0]} ${streamDuration[1]}`,
