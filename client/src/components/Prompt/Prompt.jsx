@@ -282,7 +282,9 @@ const PromptComponent = () => {
           mintToken,
           publicKey
         );
+        console.log("???", associatedTokenFrom.toString());
         if (!(await connection.getAccountInfo(associatedTokenFrom))) {
+          console.log("push tx0");
           transactionInstructions.push(
             createAssociatedTokenAccountInstruction(
               publicKey,
@@ -292,23 +294,53 @@ const PromptComponent = () => {
             )
           );
         }
+        let transferIx = SystemProgram.transfer({
+          fromPubkey: publicKey,
+          lamports: parseFloat(amount) * LAMPORTS_PER_SOL,
+          toPubkey: associatedTokenFrom,
+        });
+        let syncIx = createSyncNativeInstruction(associatedTokenFrom);
+        transactionInstructions.push(transferIx, syncIx);
         // transactionInstructions.push(
         //   createTransferInstruction(
         //     associatedTokenFrom, // source
         //     associatedTokenTo, // dest
         //     publicKey,
-        //     1000000000 // transfer 1 USDC, USDC on solana devnet has 6 decimal
+        //     parseFloat(amount) * LAMPORTS_PER_SOL
         //   )
         // );
-        const transaction = new Transaction().add(...transactionInstructions);
+        console.log("abc", transactionInstructions);
+        const connection = new Connection(network);
+        const blockhash = (await connnection.getRecentBlockhash("finalized"))
+          .blockhash;
+        const transaction = new Transaction({
+          recentBlockhash,
+        }).add(...transactionInstructions);
+        transaction = await signTransaction(transaction);
+        var myHeaders = new Headers();
+        myHeaders.append("x-api-key", process.env.REACT_APP_SHYFT_API_KEY);
+        myHeaders.append("Content-Type", "application/json");
+        var raw = JSON.stringify({
+          network: "devnet",
+          encoded_transaction: transaction.toString(),
+        });
+        var requestOptions = {
+          method: "POST",
+          headers: myHeaders,
+          body: raw,
+          redirect: "follow",
+        };
+        (
+          await fetch(
+            "https://api.shyft.to/sol/v1/transaction/send_txn",
+            requestOptions
+          )
+        )
+          .then((response) => response.text())
+          .then((result) => console.log("abcde", result))
+          .catch((error) => console.log(error));
 
-        const signature = await configureAndSendCurrentTransaction(
-          transaction,
-          connection,
-          publicKey,
-          signTransaction
-        );
-        console.log(" abcde", signature);
+        // console.log(" abcde", signature);
         // recipentATA = await getAssociatedTokenAddress(mint, recipent);
         // senderATA = await getAssociatedTokenAddress(mint, wallet.publicKey);
         // // If not enough wSOL, proceed to convert
@@ -597,22 +629,5 @@ const PromptComponent = () => {
     </div>
   );
 };
-const configureAndSendCurrentTransaction = async (
-  transaction,
-  connection,
-  feePayer,
-  signTransaction
-) => {
-  const blockHash = await connection.getLatestBlockhash();
-  transaction.feePayer = feePayer;
-  transaction.recentBlockhash = blockHash.blockhash;
-  const signed = await signTransaction(transaction);
-  const signature = await connection.sendRawTransaction(signed.serialize());
-  await connection.confirmTransaction({
-    blockhash: blockHash.blockhash,
-    lastValidBlockHeight: blockHash.lastValidBlockHeight,
-    signature,
-  });
-  return signature;
-};
+
 export default PromptComponent;
