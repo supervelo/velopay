@@ -10,6 +10,9 @@ const QUARTER_IN_YEAR = 4;
  * @returns the period value in seconds
  */
 function getTimeStep(period) {
+  if (period.endsWith("s")) {
+    period = period.substring(0, period.length - 1);
+  }
   switch (period) {
     case "second":
       return 1;

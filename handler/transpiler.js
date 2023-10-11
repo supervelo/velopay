@@ -166,6 +166,9 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
         //     );
         //     streamInfo.push(resp);
         // }
+
+        
+        // Dummy data
         const streamInfo = [
             "SOL",
             "4WMjxRZ1HhX4RhZ1fiohpwUTmjeCudQhwYogzvqHKSjh",

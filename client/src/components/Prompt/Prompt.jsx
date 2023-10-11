@@ -240,17 +240,9 @@ const PromptComponent = () => {
       }
       if (txnType === "stream") {
         let transactionInstructions = [];
-        const block = await connection.getLatestBlockhash("finalized");
-
-        // Only works on devnet
         const STREAM_FLOW_DEVNET_PROGRAM_ID =
           "HqDGZjaVRXJ9MGRQEw7qDc2rAr6iH1n1kAQdCZaCMfMZ";
-        const solanaClient = new StreamflowSolana.SolanaStreamClient(
-          clusterApiUrl("devnet"),
-          undefined,
-          undefined,
-          STREAM_FLOW_DEVNET_PROGRAM_ID
-        );
+
         const streamMeta = transactions[0].data;
         let {
           name,
@@ -268,21 +260,20 @@ const PromptComponent = () => {
           mintToken,
           recipentAddr
         );
-        if (!(await connection.getAccountInfo(associatedTokenTo))) {
-          transactionInstructions.push(
-            createAssociatedTokenAccountInstruction(
-              publicKey,
-              associatedTokenTo,
-              recipentAddr,
-              mintToken
-            )
-          );
-        }
+        // if (!(await connection.getAccountInfo(associatedTokenTo))) {
+        //   transactionInstructions.push(
+        //     createAssociatedTokenAccountInstruction(
+        //       publicKey,
+        //       associatedTokenTo,
+        //       recipentAddr,
+        //       mintToken
+        //     )
+        //   );
+        // }
         const associatedTokenFrom = await getAssociatedTokenAddress(
           mintToken,
           publicKey
         );
-        console.log("???", associatedTokenFrom.toString());
         if (!(await connection.getAccountInfo(associatedTokenFrom))) {
           console.log("push tx0");
           transactionInstructions.push(
@@ -294,9 +285,10 @@ const PromptComponent = () => {
             )
           );
         }
+
         let transferIx = SystemProgram.transfer({
           fromPubkey: publicKey,
-          lamports: parseFloat(amount) * LAMPORTS_PER_SOL,
+          lamports: parseFloat(amount) * LAMPORTS_PER_SOL * 1.05, //TODO: streamflow fee
           toPubkey: associatedTokenFrom,
         });
         let syncIx = createSyncNativeInstruction(associatedTokenFrom);
@@ -309,37 +301,22 @@ const PromptComponent = () => {
         //     parseFloat(amount) * LAMPORTS_PER_SOL
         //   )
         // );
-        console.log("abc", transactionInstructions);
-        const connection = new Connection(network);
-        const blockhash = (await connnection.getRecentBlockhash("finalized"))
-          .blockhash;
+        const block = await connection.getLatestBlockhash();
         const transaction = new Transaction({
-          recentBlockhash,
+          blockhash: block.blockhash,
+          lastValidBlockHeight: block.lastValidBlockHeight,
+          feePayer: publicKey,
         }).add(...transactionInstructions);
-        transaction = await signTransaction(transaction);
-        var myHeaders = new Headers();
-        myHeaders.append("x-api-key", process.env.REACT_APP_SHYFT_API_KEY);
-        myHeaders.append("Content-Type", "application/json");
-        var raw = JSON.stringify({
-          network: "devnet",
-          encoded_transaction: transaction.toString(),
+        console.log("abc", transactionInstructions);
+        let signedTransaction = await signTransaction(transaction);
+        const signature = await connection.sendRawTransaction(
+          signedTransaction.serialize()
+        );
+        await connection.confirmTransaction({
+          blockhash: block.blockhash,
+          lastValidBlockHeight: block.lastValidBlockHeight,
+          signature,
         });
-        var requestOptions = {
-          method: "POST",
-          headers: myHeaders,
-          body: raw,
-          redirect: "follow",
-        };
-        (
-          await fetch(
-            "https://api.shyft.to/sol/v1/transaction/send_txn",
-            requestOptions
-          )
-        )
-          .then((response) => response.text())
-          .then((result) => console.log("abcde", result))
-          .catch((error) => console.log(error));
-
         // console.log(" abcde", signature);
         // recipentATA = await getAssociatedTokenAddress(mint, recipent);
         // senderATA = await getAssociatedTokenAddress(mint, wallet.publicKey);
@@ -362,26 +339,33 @@ const PromptComponent = () => {
         //   );
         //   await sendAndConfirmTransaction(connection, tx, [wallet]);
         // }
-
+        const solanaClient = new StreamflowSolana.SolanaStreamClient(
+          clusterApiUrl("devnet"),
+          undefined,
+          undefined,
+          STREAM_FLOW_DEVNET_PROGRAM_ID
+        );
         const solanaParams = {
           sender: wallet, // SignerWalletAdapter or Keypair of Sender account
           // isNative: // [optional] [WILL CREATE A wSOL STREAM] Wether Stream or Vesting should be paid with Solana native token or not
         };
-
+        let duration =
+          getTimeStep(streamDuration[1]) * parseFloat(streamDuration[0]);
+        let unlockingInterval = getTimeStep(unlockInterval);
+        // console.log(unlockingInterval);
+        // console.log(duration);
+        // console.log(parseFloat(amount / duration) * LAMPORTS_PER_SOL);
         // Stream params
         let canTopup = streamType == "payment";
         const createStreamParams = {
           recipient: recipent, // Recipient address.
           tokenId: tokenId, // Token mint address.
-          start: getTimestamp() + 30, // Timestamp (in seconds) when the stream/token vesting starts.
+          start: getTimestamp() + 120, // Timestamp (in seconds) when the stream/token vesting starts.
           amount: getBN(parseFloat(amount), 9), // depositing 100 tokens with 9 decimals mint.
-          period: getTimeStep(unlockInterval), // Time step (period) in seconds per which the unlocking occurs.
-          cliff: getTimestamp() + 30, // Vesting contract "cliff" timestamp in seconds.
+          period: 1, // TODO: Handle other timestep
+          cliff: getTimestamp() + 150, // Vesting contract "cliff" timestamp in seconds.
           cliffAmount: new BN(0), // Amount unlocked at the "cliff" timestamp.
-          amountPerPeriod: getBN(
-            parseFloat((amount * getTimeStep(unlockInterval)) / streamDuration),
-            9
-          ), // Release rate: how many tokens are unlocked per each period.
+          amountPerPeriod: getBN(parseFloat(amount / duration), 9), // Release rate: how many tokens are unlocked per each period.
           name: `Stream ${streamType}`, // The stream name or subject.
           canTopup: canTopup, // setting to FALSE will effectively create a vesting contract.
           cancelableBySender: true, // Whether or not sender can cancel the stream.
