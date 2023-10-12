@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import "./Prompt.css";
 import { Banana, Chains } from "../../sdk/index";
 import "@rainbow-me/rainbowkit/styles.css";
@@ -44,6 +44,12 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { saveToLocalStorage } from "../../utils/saveToLocalstorage";
 import { ReactSearchAutocomplete } from "react-search-autocomplete";
 import { getTimeStep } from "../../utils/stream";
+import styles from './Prompt.css'
+import { Spin } from 'antd';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
+import Markdown from './Markdown.jsx';
+import Fab from "../FAB";
+
 const {
   StreamflowSolana,
   Types,
@@ -56,134 +62,181 @@ const { BN } = require("bn.js");
 const getTimestamp = () => {
   return Math.floor(Date.now() / 1000);
 };
-const PromptComponent = () => {
-  const items = [
-    {
-      key: Chains.mumbai,
-      label: (
-        <h4 onClick={() => setCurrentChain(Chains.mumbai)}> Polygon Mumbai </h4>
-      ),
-    },
-    {
-      key: Chains.polygonMainnet,
-      label: (
-        <h4 onClick={() => setCurrentChain(Chains.polygonMainnet)}>
-          Polygon Mainnet
-        </h4>
-      ),
-    },
-    {
-      key: Chains.gnosis,
-      label: <h4 onClick={() => setCurrentChain(Chains.gnosis)}>Gnosis</h4>,
-    },
-    {
-      key: Chains.celoTestnet,
-      label: (
-        <h4 onClick={() => setCurrentChain(Chains.celoTestnet)}>
-          Celo Testnet
-        </h4>
-      ),
-    },
-  ];
+
+export default function Home() {
+  const [userInput, setUserInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [messageState, setMessageState] = useState({
+    messages: [{
+      "message": 
+      `Hello there! I'm Velopay - your web3 friend. I can assist you in constructing monetary automation with the most optimized ways.
+      Feel free to ask me anything about Solana and I'll try my best try to answer.`,
+      "type": "apiMessage"
+    }],
+    history: []
+  });
+  const { messages, pending, history } = messageState;
+
+  const messageListRef = useRef();
+  const textAreaRef = useRef();
 
   const {
     publicKey,
-    sendTransaction: sendSolanaTransaction,
     signTransaction,
-    signMessage,
-    connecting,
     connected,
-    disconnecting,
   } = useWallet();
   const wallet = useWallet();
   const { connection } = useConnection();
-  const [walletAddress, setWalletAddress] = useState("");
-  const [bananaSdkInstance, setBananSdkInstance] = useState(null);
   const [transactions, setTransactions] = useState();
   const [isLoading, setIsLoading] = useState(false);
-  const [output, setOutput] = useState("Welcome to Banana Demo");
   const [intent, setIntent] = useState("");
   const [confirmModa, setConfirmModal] = useState(false);
-  const [currentChain, setCurrentChain] = useState(Chains.mumbai);
   const [txnType, setTxnType] = useState("");
   const [txnContext, setTxnContext] = useState("");
-  const [tokens, setTokens] = useState({
-    polygon: [],
-  });
-  const [previosIntents, setPreviousIntents] = useState([]);
-  const [onramp, setOnRamp] = useState(false);
-  const [fetch, { data: data, loading, pagination }] =
-    useLazyQueryWithPagination(ERC20TokensQueryPolygon);
 
-  const gateway = (hash) =>
-    `https://gray-roasted-macaw-763.mypinata.cloud/ipfs/${hash}`;
-  const fetchIntents = async () => {
-    let hashes = localStorage.getItem(publicKey);
-    if (hashes) {
-      hashes = JSON.parse(hashes);
-      console.log(hashes, hashes[0]);
-      for (let i = 0; i < hashes.length; i++) {
-        const res = await Axios.get(gateway(hashes[i]));
-        console.log(res);
-        let pIntents = previosIntents;
-        pIntents.push({
-          id: i,
-          name: res.data.intent,
-        });
-        setPreviousIntents(pIntents);
-        console.log("all intens ", previosIntents);
+  const networkItems = [
+    {
+      key: "mainnet",
+      label: (
+        <h4 onClick={() => {}}> Mainnet-beta </h4>
+      ),
+    },
+    {
+      key: "devnet",
+      label: (
+        <h4 onClick={() => {}}>
+          Devnet
+        </h4>
+      ),
+    },
+  ]
+
+  const instructions = [
+    { 
+      label: "Transfer", 
+      icon: <h4>Transfer</h4>, 
+      onClick: (e) => {
+        e.preventDefault()
+        setUserInput("Can you transfer 0.1 SOL from my account to this address <SOLANA_ADDRESS>") 
       }
-    }
-  };
+    },
+    { 
+      label: "Swap", 
+      icon: <h4>Swap</h4>, 
+      onClick: (e) => {
+        e.preventDefault()
+        setUserInput("I'm looking to trade 0.1 SOL for USDC tokens with the fastest possible completion.")
+      }
+    },
+    { 
+      label: "Buy NFT", 
+      icon: <h4>Buy NFT</h4>, 
+      onClick: e => {
+        e.preventDefault()
+        setUserInput("Can you purchase me 1 DegenPoet NFT?") 
+      }
+    },
+    { 
+      label: "Stream", 
+      icon: <h4>Stream</h4>, 
+      onClick: e => {
+        e.preventDefault()
+        setUserInput("I'm looking to make a 0.01 SOL token stream payment every second for 1 minute to the recipient <SOLANA_ADDRESS>") 
+      }
+    },
+  ];
 
+  // Auto scroll chat to bottom
   useEffect(() => {
-    // for now hardcoded the tokens
-    if ("0x288d1d682311018736B820294D22Ed0DBE372188") {
-      setTokens({
-        polygon: [],
-      });
-      fetch({
-        owner: "0x288d1d682311018736B820294D22Ed0DBE372188",
-        limit: 20,
-      });
+    const messageList = messageListRef.current;
+    if (messageList) {
+      messageList.scrollTop = messageList.scrollHeight;
     }
+  }, [messages.length]);
 
-    fetchIntents();
-    // initStripe()
-  }, [fetch, publicKey]);
-
+  // Focus on text field on load
   useEffect(() => {
-    if (data) {
-      setTokens((existingTokens) => ({
-        polygon: [
-          ...existingTokens.polygon,
-          ...(data?.polygon?.TokenBalance || []),
-        ],
-      }));
-
-      console.log("this is data of polygon ", data);
-    }
-  }, [data]);
-
-  useEffect(() => {
-    getBananaInstance();
+    textAreaRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    getBananaInstance();
-  }, [currentChain]);
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  const SERVER_URL = process.env.REACT_APP_HANDLER_API || "http://localhost:81";
+    const question = userInput.trim();
+    if (question === "") {
+      return;
+    }
 
-  const getBananaInstance = () => {
-    const bananaInstance = new Banana(currentChain);
-    setBananSdkInstance(bananaInstance);
-  };
+    setMessageState(state => ({
+      ...state,
+      messages: [...state.messages, {
+        type: "userMessage",
+        message: question
+      }],
+      pending: undefined
+    }));
+
+    setLoading(true);
+    setUserInput("");
+    setMessageState(state => ({ ...state, pending: "" }));
+
+    const ctrl = new AbortController();
+
+    fetchEventSource(SERVER_URL + '/solve', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        question,
+        history,
+        userAddress: publicKey.toBase58()
+      }),
+      signal: ctrl.signal,
+      onmessage: (event) => {
+        console.log(event)
+        if (event.data === "[DONE]") {
+          setMessageState(state => ({
+            history: [...state.history, [question, state.pending ?? ""]],
+            messages: [...state.messages, {
+              type: "apiMessage",
+              message: state.pending ?? "",
+            }],
+            pending: undefined
+          }));
+          setLoading(false);
+
+          ctrl.abort();
+        } else {
+          const msg = JSON.parse(event.data);
+          const data = msg.data
+          setMessageState(state => ({
+            ...state,
+            pending: (state.pending ?? "") + data,
+          }));
+
+          if (data.transaction) {
+            setTransactions(data.transaction);
+            setTxnContext(data.context);
+        
+            if (data.type) {
+              setTxnType(data.type);
+              setConfirmModal(true);
+            } else {
+              setTxnType("none");
+            }
+          }
+        }
+      }
+    });
+  }
 
   const closeModal = () => {
     setConfirmModal(false);
     setIsLoading(false);
   };
+
 
   const sendTransaction = async () => {
     setConfirmModal(false);
@@ -382,13 +435,8 @@ const PromptComponent = () => {
         ); // second argument differ depending on a chain
         console.log(`${ixs}\n${txId}\n${metadataId}`);
       }
-
-      // sendBatchTransaction handler?
     }
-
-    toast.success("Transaction successfull !!");
-    setIsLoading(false);
-  };
+  }
 
   const getPinataMetaData = (intent) =>
     JSON.stringify({
@@ -416,6 +464,8 @@ const PromptComponent = () => {
     data: getPinataMetaData(intent),
   });
 
+  const SERVER_URL = process.env.REACT_APP_HANDLER_API || "http://localhost:8080";
+
   const generateTransactions = async () => {
     if (!connected) {
       toast.error("Please connect your wallet first");
@@ -435,7 +485,7 @@ const PromptComponent = () => {
       params: {
         intent: intent,
         userAddress: publicKey.toString(),
-        chain: currentChain,
+        chain: "devnet",
       },
       headers: { "Access-Control-Allow-Origin": "true" },
     });
@@ -450,80 +500,25 @@ const PromptComponent = () => {
     }
     setConfirmModal(true);
   };
-  // goerli = 5,
-  // mumbai = 80001,
-  // polygonMainnet = 137,
-  // optimismTestnet = 420,
-  // gnosis = 100,
-  // chiadoTestnet = 10200,
-  // shibuyaTestnet = 81,
-  // astar = 592,
-  // fuji = 43113,
-  // celoTestnet = 44787,
-  // mantleTestnet = 5001,
-  const getChainName = (chain) => {
-    if (chain === 137) return "Polygon";
-    if (chain === 100) return "Gnosis";
-    if (chain === 5) return "Goerli";
-    if (chain === 80001) return "Polygon Mumbai";
-    if (chain === 420) return "Optimism Testnet";
-    if (chain === 10200) return "Chiado Testnet";
-    if (chain === 44787) return "Celo Testnet";
+
+  // Prevent blank submissions and allow for multiline input
+  const handleEnter = (e) => {
+    if (e.key === "Enter" && userInput) {
+      if (!e.shiftKey && userInput) {
+        handleSubmit(e);
+      }
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+    }
   };
 
-  const itemss = [
-    {
-      id: 0,
-      name: "Cobol",
-    },
-    {
-      id: 1,
-      name: "JavaScript",
-    },
-    {
-      id: 2,
-      name: "Basic",
-    },
-    {
-      id: 3,
-      name: "PHP",
-    },
-    {
-      id: 4,
-      name: "Java",
-    },
-  ];
-
-  const handleOnSearch = (string, results) => {
-    // onSearch will have as the first callback parameter
-    // the string searched and for the second the results.
-    console.log(string, results);
-    setIntent(string);
-  };
-
-  const handleOnSelect = (item) => {
-    // the item selected
-    console.log(item);
-  };
-
-  const handleOnFocus = () => {
-    console.log("Focused");
-  };
-
-  const formatResult = (item) => {
-    return (
-      <>
-        {/* <span style={{ display: 'block', textAlign: 'left' }}>id: {item.id}</span> */}
-        <span style={{ display: "block", textAlign: "left" }}>
-          name: {item.name}
-        </span>
-      </>
-    );
-  };
+  const chatMessages = useMemo(() => {
+    return [...messages, ...(pending ? [{ type: "apiMessage", message: pending }] : [])];
+  }, [messages, pending]);
 
   return (
-    <div>
-      <Loader isLoading={isLoading}>
+    <>
+      <main className="main">
         <Toaster />
         <div className="rainbow-div">
           <div className="rainbow-btn">
@@ -539,79 +534,89 @@ const PromptComponent = () => {
                 <WalletModalProvider>
                   <WalletDisconnectButton />
                 </WalletModalProvider>
-                {/* <CopyToClipboard text={walletAddress} onCopy={() => toast.success('Address copied')}>
-              <FaRegCopy style={{ marginLeft: "10px" }} />
-                </CopyToClipboard> */}
-                {/* <button className="connect-btn" onClick={() => setOnRamp(true)}>
-                  Onramp funds
-                </button> */}
               </div>
             ) : (
               <div>
-                <Dropdown
-                  menu={{
-                    items,
-                  }}
-                  placement="bottom"
-                  className="chain-dropdown"
-                >
-                  <Button>Devnet</Button>
-                </Dropdown>
-                <WalletModalProvider>
-                  <WalletMultiButton />
-                </WalletModalProvider>
-                {/* <button className="connect-btn" onClick={() => connectWallet()}>
-                  Connect
-                </button> */}
+                  <WalletModalProvider>
+                    <WalletMultiButton />
+                  </WalletModalProvider> 
               </div>
             )}
-            {/* <OnrampComponent openOnramp={onramp} /> */}
           </div>
         </div>
-        <div className="prompt">
-          <div className="content">
-            {/* <ReactSearchAutocomplete
-            items={previosIntents}
-            onSearch={handleOnSearch}
-            // onHover={handleOnHover}
-            onSelect={handleOnSelect}
-            onFocus={handleOnFocus}
-            autoFocus
-            onKeyDown={() => { console.log("key down") }}
-            className="inputField"
-            formatResult={formatResult}
-          /> */}
-            <input
-              className="inputField"
-              type="text"
-              placeholder="Enter your intention"
-              onChange={(e) => setIntent(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") generateTransactions();
-              }}
-            />
-            <button
-              className="executeButton"
-              onClick={() => {
-                generateTransactions();
-                // await createAttestation(walletAddress, intent);
-              }}
-            >
-              Execute
-            </button>
+        <ModalComponent
+          transaction={transactions}
+          intentContext={txnContext}
+          isModalOpen={confirmModa}
+          closeModal={() => closeModal()}
+          doTransaction={() => sendTransaction()}
+        />
+        <div className="cloud">
+          <div ref={messageListRef} className={"messagelist"}>
+            {chatMessages.map((message, index) => {
+              let icon;
+              let className;
 
-            <ModalComponent
-              transaction={transactions}
-              intentContext={txnContext}
-              isModalOpen={confirmModa}
-              closeModal={() => closeModal()}
-              doTransaction={() => sendTransaction()}
-            />
+              if (message.type === "apiMessage") {
+                icon = () => <img src="/solana.jpeg" alt="AI" width="30" height="30" className="boticon"  style={{ borderRadius: '8px' }} />;
+                className = "apimessage";
+              } else {
+                icon = () => <img src="/usericon.png" alt="Me" width="30" height="30" className="usericon"  style={{ borderRadius: '8px' }} />
+
+                // The latest message sent by the user will be animated while waiting for a response
+                className = loading && index === chatMessages.length - 1
+                  ? "usermessagewaiting"
+                  : "usermessage";
+              }
+              return (
+                <div key={index} className={className}>
+                  {icon}
+                  <div className={"markdownanswer"}>
+                    <Markdown markdown={message.message} />
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
-      </Loader>
-    </div>
-  );
-};
-
-export default PromptComponent;
+        <Fab actions={instructions} />
+        <div className="center">
+          <div className="cloudform">
+            <form onSubmit={handleSubmit}>
+              <textarea
+                disabled={loading}
+                onKeyDown={handleEnter}
+                ref={textAreaRef}
+                autoFocus={false}
+                rows={1}
+                maxLength={512}
+                id="userInput"
+                name="userInput"
+                placeholder={loading ? "Waiting for response..." : "Type your question..."}
+                value={userInput}
+                onChange={e => setUserInput(e.target.value)}
+                className={"textarea"}
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className={"generatebutton"}
+              >
+                {loading ? (
+                  <div className={"loadingwheel"}>
+                    <Spin spinning={loading} />
+                  </div>
+                ) : (
+                  // Send icon SVG in input field
+                  <svg viewBox='0 0 20 20' className={"svgicon"} xmlns='http://www.w3.org/2000/svg'>
+                    <path d='M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z'></path>
+                  </svg>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      </main>
+    </>
+  )
+}
