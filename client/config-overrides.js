@@ -12,6 +12,7 @@ module.exports = function override(config, env) {
       "os": require.resolve("os-browserify"),
       "url": require.resolve("url"),
       "zlib": require.resolve("browserify-zlib"),
+      'process/browser': require.resolve('process/browser')
   })
   config.resolve.fallback = fallback;
   config.plugins = (config.plugins || []).concat([
@@ -20,5 +21,6 @@ module.exports = function override(config, env) {
           Buffer: ['buffer', 'Buffer']
       })
   ])
+
   return config;
 }

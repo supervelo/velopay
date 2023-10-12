@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import "./Prompt.css";
 import { Banana, Chains } from "../../sdk/index";
 import "@rainbow-me/rainbowkit/styles.css";
@@ -34,6 +34,13 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { saveToLocalStorage } from "../../utils/saveToLocalstorage";
 import { ReactSearchAutocomplete } from "react-search-autocomplete";
 import { getTimeStep } from "../../utils/stream";
+import styles from './Prompt.css'
+import { Image } from 'react';
+import { Spin } from 'antd';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
+import Markdown from './Markdown.jsx';
+import Fab from "../FAB";
+
 const {
   StreamflowSolana,
   Types,
@@ -46,6 +53,8 @@ const { BN } = require("bn.js");
 const getTimestamp = () => {
   return Math.floor(Date.now() / 1000);
 };
+
+/*
 const PromptComponent = () => {
   const items = [
     {
@@ -78,32 +87,17 @@ const PromptComponent = () => {
 
   const {
     publicKey,
-    sendTransaction: sendSolanaTransaction,
     signTransaction,
-    signMessage,
-    connecting,
     connected,
-    disconnecting,
   } = useWallet();
   const wallet = useWallet();
   const { connection } = useConnection();
-  const [walletAddress, setWalletAddress] = useState("");
-  const [bananaSdkInstance, setBananSdkInstance] = useState(null);
   const [transactions, setTransactions] = useState();
   const [isLoading, setIsLoading] = useState(false);
-  const [output, setOutput] = useState("Welcome to Banana Demo");
   const [intent, setIntent] = useState("");
   const [confirmModa, setConfirmModal] = useState(false);
-  const [currentChain, setCurrentChain] = useState(Chains.mumbai);
   const [txnType, setTxnType] = useState("");
   const [txnContext, setTxnContext] = useState("");
-  const [tokens, setTokens] = useState({
-    polygon: [],
-  });
-  const [previosIntents, setPreviousIntents] = useState([]);
-  const [onramp, setOnRamp] = useState(false);
-  const [fetch, { data: data, loading, pagination }] =
-    useLazyQueryWithPagination(ERC20TokensQueryPolygon);
 
   const gateway = (hash) =>
     `https://gray-roasted-macaw-763.mypinata.cloud/ipfs/${hash}`;
@@ -436,7 +430,7 @@ const PromptComponent = () => {
   const formatResult = (item) => {
     return (
       <>
-        {/* <span style={{ display: 'block', textAlign: 'left' }}>id: {item.id}</span> */}
+        <span style={{ display: 'block', textAlign: 'left' }}>id: {item.id}</span>}
         <span style={{ display: "block", textAlign: "left" }}>
           name: {item.name}
         </span>
@@ -452,7 +446,6 @@ const PromptComponent = () => {
           <div className="rainbow-btn">
             {connected ? (
               <div>
-                {/* <TokenSection tokens={tokens.polygon} /> */}
                 <p className="walletaddress-div">
                   {" "}
                   {publicKey.toString().slice(0, 5) +
@@ -462,12 +455,6 @@ const PromptComponent = () => {
                 <WalletModalProvider>
                   <WalletDisconnectButton />
                 </WalletModalProvider>
-                {/* <CopyToClipboard text={walletAddress} onCopy={() => toast.success('Address copied')}>
-              <FaRegCopy style={{ marginLeft: "10px" }} />
-                </CopyToClipboard> */}
-                {/* <button className="connect-btn" onClick={() => setOnRamp(true)}>
-                  Onramp funds
-                </button> */}
               </div>
             ) : (
               <div>
@@ -482,28 +469,13 @@ const PromptComponent = () => {
                 </Dropdown>
                 <WalletModalProvider>
                   <WalletMultiButton />
-                </WalletModalProvider>
-                {/* <button className="connect-btn" onClick={() => connectWallet()}>
-                  Connect
-                </button> */}
+                </WalletModalProvider>=
               </div>
             )}
-            {/* <OnrampComponent openOnramp={onramp} /> */}
           </div>
         </div>
         <div className="prompt">
           <div className="content">
-            {/* <ReactSearchAutocomplete
-            items={previosIntents}
-            onSearch={handleOnSearch}
-            // onHover={handleOnHover}
-            onSelect={handleOnSelect}
-            onFocus={handleOnFocus}
-            autoFocus
-            onKeyDown={() => { console.log("key down") }}
-            className="inputField"
-            formatResult={formatResult}
-          /> */}
             <input
               className="inputField"
               type="text"
@@ -536,5 +508,520 @@ const PromptComponent = () => {
     </div>
   );
 };
+*/
 
-export default PromptComponent;
+// type Message = {
+//   type: "apiMessage" | "userMessage";
+//   message: string;
+//   isStreaming?: boolean;
+// }
+
+
+export default function Home() {
+  const [userInput, setUserInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [messageState, setMessageState] = useState({
+    messages: [{
+      "message": 
+      `Hello there! I'm Velopay - your web3 friend. I can assist you in constructing monetary automation with the most optimized ways.
+      Feel free to ask me anything about Solana and I'll try my best try to answer.`,
+      "type": "apiMessage"
+    }],
+    history: []
+  });
+  const { messages, pending, history } = messageState;
+
+  const messageListRef = useRef();
+  const textAreaRef = useRef();
+
+  const {
+    publicKey,
+    signTransaction,
+    connected,
+  } = useWallet();
+  const wallet = useWallet();
+  const { connection } = useConnection();
+  const [transactions, setTransactions] = useState();
+  const [isLoading, setIsLoading] = useState(false);
+  const [intent, setIntent] = useState("");
+  const [confirmModa, setConfirmModal] = useState(false);
+  const [txnType, setTxnType] = useState("");
+  const [txnContext, setTxnContext] = useState("");
+
+  const networkItems = [
+    {
+      key: "mainnet",
+      label: (
+        <h4 onClick={() => {}}> Mainnet-beta </h4>
+      ),
+    },
+    {
+      key: "devnet",
+      label: (
+        <h4 onClick={() => {}}>
+          Devnet
+        </h4>
+      ),
+    },
+  ]
+
+  const instructions = [
+    { 
+      label: "Transfer", 
+      icon: <h4>Transfer</h4>, 
+      onClick: (e) => {
+        e.preventDefault()
+        setUserInput("Can you transfer 0.1 SOL from my account to this address <SOLANA_ADDRESS>") 
+      }
+    },
+    { 
+      label: "Swap", 
+      icon: <h4>Swap</h4>, 
+      onClick: (e) => {
+        e.preventDefault()
+        setUserInput("I'm looking to trade 0.1 SOL for USDC tokens with the fastest possible completion.")
+      }
+    },
+    { 
+      label: "Buy NFT", 
+      icon: <h4>Buy NFT</h4>, 
+      onClick: e => {
+        e.preventDefault()
+        setUserInput("Can you buy me 1 DegenPoet NFT ?") 
+      }
+    },
+    { 
+      label: "Stream", 
+      icon: <h4>Stream</h4>, 
+      onClick: e => {
+        e.preventDefault()
+        setUserInput("I'm looking to make a 0.01 SOL token stream payment every second for 1 minute to the recipent <SOLANA_ADDRESS>") 
+      }
+    },
+  ];
+
+  // Auto scroll chat to bottom
+  useEffect(() => {
+    const messageList = messageListRef.current;
+    if (messageList) {
+      messageList.scrollTop = messageList.scrollHeight;
+    }
+  }, [messages.length]);
+
+  // Focus on text field on load
+  useEffect(() => {
+    textAreaRef.current?.focus();
+  }, []);
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const question = userInput.trim();
+    if (question === "") {
+      return;
+    }
+
+    setMessageState(state => ({
+      ...state,
+      messages: [...state.messages, {
+        type: "userMessage",
+        message: question
+      }],
+      pending: undefined
+    }));
+
+    setLoading(true);
+    setUserInput("");
+    setMessageState(state => ({ ...state, pending: "" }));
+
+    const ctrl = new AbortController();
+
+    fetchEventSource(SERVER_URL + '/solve', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        question,
+        history,
+        userAddress: publicKey.toBase58()
+      }),
+      signal: ctrl.signal,
+      onmessage: (event) => {
+        console.log(event)
+        if (event.data === "[DONE]") {
+          setMessageState(state => ({
+            history: [...state.history, [question, state.pending ?? ""]],
+            messages: [...state.messages, {
+              type: "apiMessage",
+              message: state.pending ?? "",
+            }],
+            pending: undefined
+          }));
+          setLoading(false);
+
+          ctrl.abort();
+        // } else if (event.data.transactions) {
+        //   const transactions = JSON.parse(event.data.transactions);
+        //   setTransactions(transactions.transaction);
+        //   setTxnContext(transactions.context);
+      
+        //   if (transactions.type) {
+        //     setTxnType(transactions.type);
+        //     setConfirmModal(true);
+        //   } else {
+        //     setTxnType("none");
+        //   }
+
+        //   setLoading(false);
+        //   ctrl.abort(); }
+        } else {
+          const msg = JSON.parse(event.data);
+          const data = msg.data
+          setMessageState(state => ({
+            ...state,
+            pending: (state.pending ?? "") + data,
+          }));
+
+          if (data.transaction) {
+            setTransactions(data.transaction);
+            setTxnContext(data.context);
+        
+            if (data.type) {
+              setTxnType(data.type);
+              setConfirmModal(true);
+            } else {
+              setTxnType("none");
+            }
+          }
+        }
+      }
+    });
+  }
+
+  const closeModal = () => {
+    setConfirmModal(false);
+    setIsLoading(false);
+  };
+
+  const sendTransaction = async () => {
+    setConfirmModal(false);
+    // setIsLoading(false);
+    // return;
+    console.log("this is txn type ", txnType);
+    const signer = publicKey;
+    if (txnType === "bridge") {
+      await bundleAndSend(transactions);
+      toast.success("Transaction successfull !!");
+    } else {
+      let txnResp;
+      console.log("transactions formed ", transactions);
+
+      if (txnType === "transfer") {
+        const transferTransactionBuf = Buffer.from(
+          transactions[0].data,
+          "base64"
+        );
+        var transaction = VersionedTransaction.deserialize(
+          transferTransactionBuf
+        );
+        const signedTx = await signTransaction(transaction);
+        const txid = await sendAndConfirmTransaction(connection, signedTx);
+        console.log(`https://explorer.solana.com/tx/${txid}?cluster=devnet`);
+      }
+      if (txnType === "nft_buy") {
+        // buffer type
+        const transferTransactionBuf = Buffer.from(
+          transactions[0].data,
+          "base64"
+        );
+        // console.log(transferTransactionBuf);
+        var transaction = VersionedTransaction.deserialize(
+          transferTransactionBuf
+        );
+        const signedTx = await signTransaction(transaction);
+        const txid = await sendAndConfirmTransaction(connection, signedTx);
+        // const txid = await sendAndConfirmTransaction(connection, signedTx);
+        console.log(
+          `https://explorer.solana.com/tx/${txid}?cluster=mainnet-beta`
+        );
+      }
+      // swap only works on mainnet
+      if (txnType === "swap") {
+        // deserialize the transaction
+        const swapTransactionBuf = Buffer.from(transactions[0], "base64");
+        var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+
+        // sign the transaction
+        const signedTx = await signTransaction(transaction);
+        const txid = await sendAndConfirmTransaction(connection, signedTx);
+        console.log(`https://solscan.io/tx/${txid}`);
+      }
+      if (txnType === "stream") {
+        // let connection = new Connection(clusterApiUrl("devnet"), {
+        //   commitment: "confirmed",
+        // });
+        // Only works on devnet
+        const STREAM_FLOW_DEVNET_PROGRAM_ID = "HqDGZjaVRXJ9MGRQEw7qDc2rAr6iH1n1kAQdCZaCMfMZ"
+        const solanaClient = new StreamflowSolana.SolanaStreamClient(
+          clusterApiUrl("devnet"),
+          undefined,
+          undefined,
+          STREAM_FLOW_DEVNET_PROGRAM_ID
+        );
+        const streamMeta = transactions[0].data;
+        const {
+          name,
+          recipent,
+          tokenId,
+          amount,
+          streamType,
+          unlockInterval,
+          streamDuration,
+        } = streamMeta;
+        // create ATA if not exists
+        let mint = new PublicKey(tokenId);
+        const recipentId = await getOrCreateAssociatedTokenAccount(
+          connection,
+          wallet,
+          mint,
+          recipent,
+          false,
+          "finalized"
+        );
+        const senderId = await getOrCreateAssociatedTokenAccount(
+          connection,
+          wallet,
+          mint,
+          wallet.publicKey,
+          false,
+          "finalized"
+        );
+
+        
+        const solanaParams = {
+          sender: wallet, // SignerWalletAdapter or Keypair of Sender account
+          // isNative: // [optional] [WILL CREATE A wSOL STREAM] Wether Stream or Vesting should be paid with Solana native token or not
+        };
+
+        // Stream params
+        let canTopup = streamType == "payment";
+        const createStreamParams = {
+          recipient: recipent, // Recipient address.
+          tokenId: tokenId, // Token mint address.
+          start: getTimestamp() + 30, // Timestamp (in seconds) when the stream/token vesting starts.
+          amount: getBN(parseFloat(amount), 9), // depositing 100 tokens with 9 decimals mint.
+          period: getTimeStep(unlockInterval), // Time step (period) in seconds per which the unlocking occurs.
+          cliff: getTimestamp() + 30, // Vesting contract "cliff" timestamp in seconds.
+          cliffAmount: new BN(0), // Amount unlocked at the "cliff" timestamp.
+          amountPerPeriod: getBN(
+            parseFloat((amount * getTimeStep(unlockInterval)) / streamDuration),
+            9
+          ), // Release rate: how many tokens are unlocked per each period.
+          name: `Stream ${streamType}`, // The stream name or subject.
+          canTopup: canTopup, // setting to FALSE will effectively create a vesting contract.
+          cancelableBySender: true, // Whether or not sender can cancel the stream.
+          cancelableByRecipient: false, // Whether or not recipient can cancel the stream.
+          transferableBySender: true, // Whether or not sender can transfer the stream.
+          transferableByRecipient: false, // Whether or not recipient can transfer the stream.
+          automaticWithdrawal: true, // Whether or not a 3rd party (e.g. cron job, "cranker") can initiate a token withdraw/transfer.
+          withdrawalFrequency: 10, // Relevant when automatic withdrawal is enabled. If greater than 0 our withdrawor will take care of withdrawals. If equal to 0 our withdrawor will skip, but everyone else can initiate withdrawals.
+          partner: undefined, //  (optional) Partner's wallet address (string | undefined).
+        };
+        const { ixs, txId, metadataId } = await solanaClient.create(
+          createStreamParams,
+          solanaParams
+        ); // second argument differ depending on a chain
+        console.log(`${ixs}\n${txId}\n${metadataId}`);
+      }
+
+      // sendBatchTransaction handler?
+    }
+
+    toast.success("Transaction successfull !!");
+    setIsLoading(false);
+  };
+
+  const getPinataMetaData = (intent) =>
+    JSON.stringify({
+      pinataOptions: {
+        cidVersion: 1,
+      },
+      pinataMetadata: {
+        name: "testing",
+        keyvalues: {
+          intent: intent,
+        },
+      },
+      pinataContent: {
+        intent: intent,
+      },
+    });
+
+  const getPinataConfig = (intent) => ({
+    method: "post",
+    url: "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.REACT_APP_PINATA_JWT}`,
+    },
+    data: getPinataMetaData(intent),
+  });
+
+  const SERVER_URL = process.env.REACT_APP_HANDLER_API || "http://localhost:8080";
+
+  const generateTransactions = async () => {
+    if (!connected) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    setIsLoading(true);
+    const pinataAxiosConfig = getPinataConfig(intent);
+    console.log("this is pijnata axios config ", pinataAxiosConfig);
+    // saving intents on ipfs for faster autocomplete
+    const savingRes = await Axios(pinataAxiosConfig);
+    console.log("resp", savingRes);
+    // resp.data.IpfsHash
+    saveToLocalStorage(publicKey, savingRes.data.IpfsHash);
+
+    const res = await Axios.get(SERVER_URL + "/solve", {
+      params: {
+        intent: intent,
+        userAddress: publicKey.toString(),
+        chain: "devnet",
+      },
+      headers: { "Access-Control-Allow-Origin": "true" },
+    });
+    const transactions = JSON.parse(res.data.transactions);
+    setTransactions(transactions.transaction);
+    setTxnContext(transactions.context);
+
+    if (transactions.type) {
+      setTxnType(transactions.type);
+    } else {
+      setTxnType("none");
+    }
+    setConfirmModal(true);
+  };
+
+  // Prevent blank submissions and allow for multiline input
+  const handleEnter = (e) => {
+    if (e.key === "Enter" && userInput) {
+      if (!e.shiftKey && userInput) {
+        handleSubmit(e);
+      }
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+    }
+  };
+
+  const chatMessages = useMemo(() => {
+    return [...messages, ...(pending ? [{ type: "apiMessage", message: pending }] : [])];
+  }, [messages, pending]);
+
+  return (
+    <>
+      <main className="main">
+        <Toaster />
+        <div className="rainbow-div">
+          <div className="rainbow-btn">
+            {connected ? (
+              <div>
+                {/* <TokenSection tokens={tokens.polygon} /> */}
+                <p className="walletaddress-div">
+                  {" "}
+                  {publicKey.toString().slice(0, 5) +
+                    "........." +
+                    publicKey.toString().slice(-5)}
+                </p>
+                <WalletModalProvider>
+                  <WalletDisconnectButton />
+                </WalletModalProvider>
+              </div>
+            ) : (
+              <div>
+                  <WalletModalProvider>
+                    <WalletMultiButton />
+                  </WalletModalProvider> 
+              </div>
+            )}
+          </div>
+        </div>
+        <ModalComponent
+          transaction={transactions}
+          intentContext={txnContext}
+          isModalOpen={confirmModa}
+          closeModal={() => closeModal()}
+          doTransaction={() => sendTransaction()}
+        />
+        <div className="cloud">
+          <div ref={messageListRef} className={"messagelist"}>
+            {chatMessages.map((message, index) => {
+              let icon;
+              let className;
+
+              if (message.type === "apiMessage") {
+                icon = () => <Image src="/solana.jpeg" alt="AI" width="30" height="30" className="boticon" priority style={{ borderRadius: '8px' }} />;
+                className = "apimessage";
+              } else {
+                icon = () => <Image src="/usericon.png" alt="Me" width="30" height="30" className="usericon" priority style={{ borderRadius: '8px' }} />
+
+                // The latest message sent by the user will be animated while waiting for a response
+                className = loading && index === chatMessages.length - 1
+                  ? "usermessagewaiting"
+                  : "usermessage";
+              }
+              return (
+                <div key={index} className={className}>
+                  {icon}
+                  <div className={"markdownanswer"}>
+                    <Markdown markdown={message.message} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+        <Fab actions={instructions} />
+        <div className="center">
+          <div className="cloudform">
+            <form onSubmit={handleSubmit}>
+              <textarea
+                disabled={loading}
+                onKeyDown={handleEnter}
+                ref={textAreaRef}
+                autoFocus={false}
+                rows={1}
+                maxLength={512}
+                id="userInput"
+                name="userInput"
+                placeholder={loading ? "Waiting for response..." : "Type your question..."}
+                value={userInput}
+                onChange={e => setUserInput(e.target.value)}
+                className={"textarea"}
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className={"generatebutton"}
+              >
+                {loading ? (
+                  <div className={"loadingwheel"}>
+                    {/* <Spin spinning={loading} /> */}
+                  </div>
+                ) : (
+                  // Send icon SVG in input field
+                  <svg viewBox='0 0 20 20' className={"svgicon"} xmlns='http://www.w3.org/2000/svg'>
+                    <path d='M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z'></path>
+                  </svg>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      </main>
+    </>
+  )
+}

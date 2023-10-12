@@ -33,12 +33,9 @@ const {
 } = require("./transactions/bridgeAndStake");
 const tensorQuery = require("./utils/tensorQuery");
 
-const transpiler = async (currentStep, classifier, userAddress, chain) => {
-    console.log("this is chain ", chain);
-    console.log("this is chain ", typeof chain);
-    console.log("this is chain ", chain === 137);
+const transpiler = async (currentStep, classifier, userAddress) => {
     const context = classifier.classify(currentStep);
-    console.log("step context ", context);
+    console.log("step context: ", context);
 
     // polygon mainnet and gnosis
     if (context === "swap") {
@@ -88,7 +85,6 @@ const transpiler = async (currentStep, classifier, userAddress, chain) => {
             tokenOut: singlePair[singlePair.pair[1]],
             amount: swapInfo[1],
             userAddress,
-            chain,
         };
 
         const resp = await constructSwapTransaction(swapTransactionMeta);
