@@ -26,8 +26,6 @@ import {
   SystemProgram,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
-import bs58 from "bs58";
-import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 import {
   getOrCreateAssociatedTokenAccount,
   createSyncNativeInstruction,
@@ -47,7 +45,6 @@ import { saveToLocalStorage } from "../../utils/saveToLocalstorage";
 import { ReactSearchAutocomplete } from "react-search-autocomplete";
 import { getTimeStep } from "../../utils/stream";
 import styles from './Prompt.css'
-import { Image } from 'react';
 import { Spin } from 'antd';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import Markdown from './Markdown.jsx';
@@ -784,6 +781,7 @@ export default function Home() {
     setIsLoading(false);
   };
 
+
   const sendTransaction = async () => {
     setConfirmModal(false);
     // setIsLoading(false);
@@ -838,19 +836,12 @@ export default function Home() {
         console.log(`https://solscan.io/tx/${txid}`);
       }
       if (txnType === "stream") {
-        // let connection = new Connection(clusterApiUrl("devnet"), {
-        //   commitment: "confirmed",
-        // });
-        // Only works on devnet
-        const STREAM_FLOW_DEVNET_PROGRAM_ID = "HqDGZjaVRXJ9MGRQEw7qDc2rAr6iH1n1kAQdCZaCMfMZ"
-        const solanaClient = new StreamflowSolana.SolanaStreamClient(
-          clusterApiUrl("devnet"),
-          undefined,
-          undefined,
-          STREAM_FLOW_DEVNET_PROGRAM_ID
-        );
+        let transactionInstructions = [];
+        // TODO: change program id based on cluster
+        const STREAM_FLOW_DEVNET_PROGRAM_ID =
+          "HqDGZjaVRXJ9MGRQEw7qDc2rAr6iH1n1kAQdCZaCMfMZ";
         const streamMeta = transactions[0].data;
-        const {
+        let {
           name,
           recipent,
           tokenId,
@@ -860,44 +851,118 @@ export default function Home() {
           streamDuration,
         } = streamMeta;
         // create ATA if not exists
-        let mint = new PublicKey(tokenId);
-        const recipentId = await getOrCreateAssociatedTokenAccount(
-          connection,
-          wallet,
-          mint,
-          recipent,
-          false,
-          "finalized"
+        let mintToken = new PublicKey(tokenId);
+        let recipentAddr = new PublicKey(recipent);
+        const associatedTokenTo = await getAssociatedTokenAddress(
+          mintToken,
+          recipentAddr
         );
-        const senderId = await getOrCreateAssociatedTokenAccount(
-          connection,
-          wallet,
-          mint,
-          wallet.publicKey,
-          false,
-          "finalized"
+        if (!(await connection.getAccountInfo(associatedTokenTo))) {
+          transactionInstructions.push(
+            createAssociatedTokenAccountInstruction(
+              publicKey,
+              associatedTokenTo,
+              recipentAddr,
+              mintToken
+            )
+          );
+        }
+        const associatedTokenFrom = await getAssociatedTokenAddress(
+          mintToken,
+          publicKey
         );
+        if (!(await connection.getAccountInfo(associatedTokenFrom))) {
+          console.log("push tx0");
+          transactionInstructions.push(
+            createAssociatedTokenAccountInstruction(
+              publicKey,
+              associatedTokenFrom,
+              publicKey,
+              mintToken
+            )
+          );
+        }
 
-        
+        let transferIx = SystemProgram.transfer({
+          fromPubkey: publicKey,
+          lamports: parseFloat(amount) * LAMPORTS_PER_SOL * 1.05, //TODO: handle convert to wSOL better
+          toPubkey: associatedTokenFrom,
+        });
+        let syncIx = createSyncNativeInstruction(associatedTokenFrom);
+        transactionInstructions.push(transferIx, syncIx);
+        // transactionInstructions.push(
+        //   createTransferInstruction(
+        //     associatedTokenFrom, // source
+        //     associatedTokenTo, // dest
+        //     publicKey,
+        //     parseFloat(amount) * LAMPORTS_PER_SOL
+        //   )
+        // );
+        const block = await connection.getLatestBlockhash();
+        const transaction = new Transaction({
+          blockhash: block.blockhash,
+          lastValidBlockHeight: block.lastValidBlockHeight,
+          feePayer: publicKey,
+        }).add(...transactionInstructions);
+        console.log("abc", transactionInstructions);
+        let signedTransaction = await signTransaction(transaction);
+        const signature = await connection.sendRawTransaction(
+          signedTransaction.serialize()
+        );
+        await connection.confirmTransaction({
+          blockhash: block.blockhash,
+          lastValidBlockHeight: block.lastValidBlockHeight,
+          signature,
+        });
+        // console.log(" abcde", signature);
+        // recipentATA = await getAssociatedTokenAddress(mint, recipent);
+        // senderATA = await getAssociatedTokenAddress(mint, wallet.publicKey);
+        // // If not enough wSOL, proceed to convert
+        // let tokenAmount = await connection.getTokenAccountBalance(
+        //   senderATA.address
+        // );
+        // if (tokenAmount.uiAmount <= parseFloat(amount)) {
+        //   // Auto convert SOL to wSOL
+        //   tx = new Transaction().add(
+        //     // trasnfer SOL
+        //     SystemProgram.transfer({
+        //       fromPubkey: wallet.publicKey,
+        //       toPubkey: senderATA,
+        //       lamports:
+        //         (parseFloat(amount) - tokenAmount.uiAmount) * LAMPORTS_PER_SOL,
+        //     }),
+        //     // sync wrapped SOL balance
+        //     createSyncNativeInstruction(senderATA.address)
+        //   );
+        //   await sendAndConfirmTransaction(connection, tx, [wallet]);
+        // }
+        const solanaClient = new StreamflowSolana.SolanaStreamClient(
+          clusterApiUrl("devnet"),
+          undefined,
+          undefined,
+          STREAM_FLOW_DEVNET_PROGRAM_ID
+        );
         const solanaParams = {
           sender: wallet, // SignerWalletAdapter or Keypair of Sender account
           // isNative: // [optional] [WILL CREATE A wSOL STREAM] Wether Stream or Vesting should be paid with Solana native token or not
         };
-
+        let duration =
+          getTimeStep(streamDuration[1]) * parseFloat(streamDuration[0]);
+        let unlockingInterval = getTimeStep(unlockInterval);
+        // console.log(unlockingInterval);
+        // console.log(duration);
+        // console.log(parseFloat(amount / duration) * LAMPORTS_PER_SOL);
         // Stream params
         let canTopup = streamType == "payment";
         const createStreamParams = {
           recipient: recipent, // Recipient address.
           tokenId: tokenId, // Token mint address.
-          start: getTimestamp() + 30, // Timestamp (in seconds) when the stream/token vesting starts.
+          start: getTimestamp() + 120, // Timestamp (in seconds) when the stream/token vesting starts.
           amount: getBN(parseFloat(amount), 9), // depositing 100 tokens with 9 decimals mint.
-          period: getTimeStep(unlockInterval), // Time step (period) in seconds per which the unlocking occurs.
-          cliff: getTimestamp() + 30, // Vesting contract "cliff" timestamp in seconds.
+          period: 1, // TODO: Handle other timestep
+          cliff: getTimestamp() + 150, // Vesting contract "cliff" timestamp in seconds.
           cliffAmount: new BN(0), // Amount unlocked at the "cliff" timestamp.
-          amountPerPeriod: getBN(
-            parseFloat((amount * getTimeStep(unlockInterval)) / streamDuration),
-            9
-          ), // Release rate: how many tokens are unlocked per each period.
+          amountPerPeriod: getBN(parseFloat(amount / duration), 9), // Release rate: how many tokens are unlocked per each period.
           name: `Stream ${streamType}`, // The stream name or subject.
           canTopup: canTopup, // setting to FALSE will effectively create a vesting contract.
           cancelableBySender: true, // Whether or not sender can cancel the stream.
@@ -914,13 +979,8 @@ export default function Home() {
         ); // second argument differ depending on a chain
         console.log(`${ixs}\n${txId}\n${metadataId}`);
       }
-
-      // sendBatchTransaction handler?
     }
-
-    toast.success("Transaction successfull !!");
-    setIsLoading(false);
-  };
+  }
 
   const getPinataMetaData = (intent) =>
     JSON.stringify({
@@ -1042,10 +1102,10 @@ export default function Home() {
               let className;
 
               if (message.type === "apiMessage") {
-                icon = () => <Image src="/solana.jpeg" alt="AI" width="30" height="30" className="boticon" priority style={{ borderRadius: '8px' }} />;
+                icon = () => <img src="/solana.jpeg" alt="AI" width="30" height="30" className="boticon"  style={{ borderRadius: '8px' }} />;
                 className = "apimessage";
               } else {
-                icon = () => <Image src="/usericon.png" alt="Me" width="30" height="30" className="usericon" priority style={{ borderRadius: '8px' }} />
+                icon = () => <img src="/usericon.png" alt="Me" width="30" height="30" className="usericon"  style={{ borderRadius: '8px' }} />
 
                 // The latest message sent by the user will be animated while waiting for a response
                 className = loading && index === chatMessages.length - 1
@@ -1088,7 +1148,7 @@ export default function Home() {
               >
                 {loading ? (
                   <div className={"loadingwheel"}>
-                    {/* <Spin spinning={loading} /> */}
+                    <Spin spinning={loading} />
                   </div>
                 ) : (
                   // Send icon SVG in input field
