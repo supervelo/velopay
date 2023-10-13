@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import "./Prompt.css";
-import { Banana, Chains } from "../../sdk/index";
 import "@rainbow-me/rainbowkit/styles.css";
 import { ethers } from "ethers";
 import Axios from "axios";
@@ -9,11 +8,7 @@ import Loader from "../shared/Loader/Loader";
 import ModalComponent from "../shared/Modal/Modal";
 import { Button, Dropdown, Space } from "antd";
 // import StakingArtifact from "../abi/Staking.json";
-import { bundleAndSend } from "../../bundler/bundleAndSend";
-import { createAttestation } from "../../attest/createAttestation";
-import { useLazyQueryWithPagination } from "@airstack/airstack-react";
-import { ERC20TokensQueryPolygon } from "../../query";
-import TokenSection from "../tokens/Token";
+import { Marinade, MarinadeConfig, Provider } from '@marinade.finance/marinade-ts-sdk'
 import { FaRegCopy } from "react-icons/fa";
 import {
   VersionedTransaction,
@@ -69,8 +64,8 @@ export default function Home() {
   const [messageState, setMessageState] = useState({
     messages: [{
       "message": 
-      `Hello there! I'm Velopay - your web3 friend. I can assist you in constructing monetary automation with the most optimized ways.
-      Feel free to ask me anything about Solana and I'll try my best try to answer.`,
+      `Hello there! I'm Velopay - your web3 friend. I can assist you in constructing Solana monetary automation with the most optimized ways.
+      Feel free to ask me anything about Clockwork and I'll try my best try to answer.`,
       "type": "apiMessage"
     }],
     history: []
@@ -142,6 +137,14 @@ export default function Home() {
       onClick: e => {
         e.preventDefault()
         setUserInput("I'm looking to make a 0.01 SOL token stream payment every second for 1 minute to the recipient <SOLANA_ADDRESS>") 
+      }
+    },
+    { 
+      label: "Stake", 
+      icon: <h4>Stake</h4>, 
+      onClick: e => {
+        e.preventDefault()
+        setUserInput("Can you please stake 0.1 SOL into the staking platform with the highest APY") 
       }
     },
   ];
@@ -244,8 +247,25 @@ export default function Home() {
     // return;
     console.log("this is txn type ", txnType);
     const signer = publicKey;
-    if (txnType === "bridge") {
-      await bundleAndSend(transactions);
+    if (txnType === "staking") {
+      // const MY_REFERRAL_ACCOUNT = "2QXSrPvhgky1aivBZjuN9oMV9mwzJRqKtQv9RpbFz1cf"
+      const stakingMeta = transactions[0].data;
+  
+      const config = new MarinadeConfig({
+        connection: connection,
+        publicKey: publicKey,
+      })
+      const marinade = new Marinade(config)
+      
+      const {
+        associatedMSolTokenAccountAddress,
+        transaction,
+      } = await marinade.deposit(getBN(parseFloat(stakingMeta.amount), 9))
+
+      // const signedTx = await signTransaction(transaction);
+      const txid = await wallet.sendTransaction(transaction);
+      console.log(`https://explorer.solana.com/tx/${txid}?cluster=devnet`);
+
       toast.success("Transaction successfull !!");
     } else {
       let txnResp;
@@ -262,6 +282,7 @@ export default function Home() {
         const signedTx = await signTransaction(transaction);
         const txid = await sendAndConfirmTransaction(connection, signedTx);
         console.log(`https://explorer.solana.com/tx/${txid}?cluster=devnet`);
+        toast.success("Transaction successfull");
       }
       if (txnType === "nft_buy") {
         // buffer type
@@ -279,6 +300,7 @@ export default function Home() {
         console.log(
           `https://explorer.solana.com/tx/${txid}?cluster=mainnet-beta`
         );
+        toast.success("Transaction successfull");
       }
       // swap only works on mainnet
       if (txnType === "swap") {
@@ -290,6 +312,7 @@ export default function Home() {
         const signedTx = await signTransaction(transaction);
         const txid = await sendAndConfirmTransaction(connection, signedTx);
         console.log(`https://solscan.io/tx/${txid}`);
+        toast.success("Transaction successfull");
       }
       if (txnType === "stream") {
         let transactionInstructions = [];
@@ -434,6 +457,7 @@ export default function Home() {
           solanaParams
         ); // second argument differ depending on a chain
         console.log(`${ixs}\n${txId}\n${metadataId}`);
+        toast.success("Transaction successfull");
       }
     }
   }
@@ -518,8 +542,8 @@ export default function Home() {
 
   return (
     <>
+      <Toaster />
       <main className="main">
-        <Toaster />
         <div className="rainbow-div">
           <div className="rainbow-btn">
             {connected ? (
