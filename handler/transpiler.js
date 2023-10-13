@@ -29,8 +29,8 @@ const {
     constructStreamTransaction,
 } = require("./transactions/streamTransaction");
 const {
-    contructBridgeTransactionForStaking,
-} = require("./transactions/bridgeAndStake");
+    contructLiquidStakingTransaction,
+} = require("./transactions/liquidStakeTransaction");
 const tensorQuery = require("./utils/tensorQuery");
 
 const transpiler = async (currentStep, classifier, userAddress) => {
@@ -257,18 +257,18 @@ const transpiler = async (currentStep, classifier, userAddress) => {
             };
         }
 
-        const bridgeTransactionData = {
+        const stakingTransactionData = {
             amount: tokenAmount,
             userAddress,
         };
 
-        console.log("bridge data ", bridgeTransactionData);
+        console.log("staking data ", stakingTransactionData);
 
-        let bridgeTxnResp = await contructBridgeTransactionForStaking(
-            bridgeTransactionData
+        let stakingTxnResp = await contructLiquidStakingTransaction(
+            stakingTransactionData
         );
-        console.log("txn ", bridgeTxnResp);
-        return { ...bridgeTxnResp, type: "bridge" };
+        console.log("txn ", stakingTxnResp);
+        return { ...stakingTxnResp, type: "staking" };
     }
 };
 
