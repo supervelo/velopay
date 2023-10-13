@@ -1,6 +1,6 @@
 # Copyright 2021 - 2023 Transflox LLC. All rights reserved.
 
-FROM --platform=linux/arm64 node:18-alpine
+FROM --platform=linux/arm64 node:18
 
 WORKDIR /app
 
