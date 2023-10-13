@@ -34,11 +34,15 @@ jobs:
 
       - uses: pnpm/action-setup@v2
         name: Install pnpm
-        id: pnpm-install
-        working-directory: ./handler
+        id: install-pnpm
         with:
           version: 8
-          run_install: true
+          run_install: false
+
+      - name: Install dependencies
+        shell: bash
+        working-directory: ./handler
+        run: pnpm install
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
