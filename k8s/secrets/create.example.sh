@@ -1,4 +1,3 @@
-# Copyright 2021 - 2023 Transflox LLC. All rights reserved.
 
 hash() {
   echo $(echo "$1" | tr -d '\n' | base64)

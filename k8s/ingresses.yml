@@ -1,5 +1,3 @@
-# Copyright 2021 - 2023 Transflox LLC. All rights reserved.
-
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
