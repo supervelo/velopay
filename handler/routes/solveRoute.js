@@ -16,13 +16,8 @@ const currentStep =
     
 router.post('/', async (req, res) => {
 
-
     const body = req.body;
     const dir = path.resolve(process.cwd(), "embeddingData");
-
-    const sendData = (data) => {
-      res.write(`data: ${data}\n\n`);
-    };
 
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
@@ -33,44 +28,51 @@ router.post('/', async (req, res) => {
       "Connection": "keep-alive",
     });
 
+    const sendData = (data) => {
+      res.write(`data: ${data}\n\n`);
+    };
+
+    // Send initial data so browsers know SSE is connected
     sendData(JSON.stringify({ data: "" }));
-  
+
+    let txn;
     try {
       const classifier = await getClassifier();
-      const txn = await transpiler(body.question, classifier, body.userAddress);
-
-      if (txn.success === false) {
-        const vectorstore = await HNSWLib.load(dir, new OpenAIEmbeddings());
-
-        const chain = makeChain(vectorstore, async (token, runId, parentRunId) => {
-          sendData(JSON.stringify({ data: token }));
-        });
-
-        try {
-          const resp = await chain.call({
-            question: body.question,
-            chat_history: body.history,
-          });
-    
-        } catch (err) {
-          console.error(err);
-          // Ignore error
-        } finally {
-          sendData("[DONE]");
-          res.end();
-        }
-      } else {
-        console.log("send Txn data")
-        sendData(JSON.stringify({ data: txn }));
-        setTimeout(() => {
-          sendData("[DONE]");
-          res.end();
-        }, 2000)
-      }
+      txn = await transpiler(body.question, classifier, body.userAddress);
     } catch (err) {
-        console.log(err);
+      console.log(err);
+      sendData(JSON.stringify({ data: err }));
+    }
+
+    if (txn.success === true) {
+
+      sendData(JSON.stringify({ data: txn }));
+      setTimeout(() => {
         sendData("[DONE]");
         res.end();
+      }, 2000)
+
+    } else {
+      // Using Q&A model
+      const vectorstore = await HNSWLib.load(dir, new OpenAIEmbeddings());
+      const chain = makeChain(vectorstore, async (token, runId, parentRunId) => {
+        sendData(JSON.stringify({ data: token }));
+      });
+
+      try {
+        await chain.call({
+          question: body.question,
+          chat_history: body.history,
+        });
+
+      } catch (err) {
+        // Ignore error
+        console.error(err);
+      } finally {
+        sendData("[DONE]");
+        res.end();
+      }
+
     }
 })
 

@@ -6,7 +6,7 @@
     flex-direction: column-reverse;
     position: fixed;
     right: 2em;
-    bottom: 2em;
+    bottom: 3em;
     max-height: 52px;
   
     &.open {
@@ -19,7 +19,7 @@
       display: grid;
       place-items: center;
       margin: 5px 0px;
-      font-size: 20px;
+      font-size: 16px;
       padding: 12px;
       cursor: pointer;
       position: relative;
@@ -27,7 +27,7 @@
   
     .fab-button {
       background-color: #00a8ff;
-  
+
       svg {
         fill: white;
       }

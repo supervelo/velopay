@@ -9,17 +9,39 @@ const ModalComponent = (props) => {
 
   const handleOk = () => {
     setIsModalOpen(false);
+    props.setConfirmThirdOption("")
     props.doTransaction();
   };
 
   const handleCancel = () => {
-    setIsModalOpen(false);
+    props.setConfirmThirdOption("")
+    props.closeModal();
   };
   console.log(props.transaction)
 
   return (
     <>
-      <Modal title="Please confirm the below transactions!" open={props.isModalOpen} onOk={handleOk} onCancel={() => props.closeModal()}>
+      <Modal 
+        title="Please confirm the below transactions!" 
+        open={props.isModalOpen} 
+        onOk={handleOk} 
+        onCancel={() => props.closeModal()}
+        footer={[
+          <>
+            <Button key="back" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button key="submit" type="primary" onClick={handleOk}>
+              Ok
+            </Button>
+            {props.footerThirdOption.length !== 0 && 
+            <Button key="back" onClick={handleCancel}>
+              {props.footerThirdOption}
+            </Button>
+            }
+          </>
+        ]}
+      >
         <h3>{props.intentContext}</h3>
          {/* {props.transaction && props.transaction.map(txn => {
             return (
