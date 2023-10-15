@@ -64,8 +64,10 @@ export default function Home() {
   const [messageState, setMessageState] = useState({
     messages: [{
       "message": 
-      `Hello there! I'm Velopay - your web3 friend. I can assist you in constructing Solana monetary automation with the most optimized ways.
-      Feel free to ask me anything about Clockwork and I'll try my best try to answer.`,
+      `Hello there! I'm Velopay 🚴‍♂️ - your web3 interpreter friend. \n 
+      - I can assist you in constructing Solana monetary automation with the most optimized ways. \n
+      - Feel free to ask me to do any transactions I'll try my best try to understand. \n
+      - Extraneous feature: I can help you find answers about Clockwork SDK solely if you were a dev. I will get updated soon.`,
       "type": "apiMessage"
     }],
     history: []
@@ -86,6 +88,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [intent, setIntent] = useState("");
   const [confirmModa, setConfirmModal] = useState(false);
+  const [confirmThirdOption, setConfirmThirdOption] = useState("");
   const [txnType, setTxnType] = useState("");
   const [txnContext, setTxnContext] = useState("");
 
@@ -108,30 +111,6 @@ export default function Home() {
 
   const instructions = [
     { 
-      label: "Transfer", 
-      icon: <h4>Transfer</h4>, 
-      onClick: (e) => {
-        e.preventDefault()
-        setUserInput("Can you transfer 0.1 SOL from my account to this address <SOLANA_ADDRESS>") 
-      }
-    },
-    { 
-      label: "Swap", 
-      icon: <h4>Swap</h4>, 
-      onClick: (e) => {
-        e.preventDefault()
-        setUserInput("I'm looking to trade 0.1 SOL for USDC tokens with the fastest possible completion.")
-      }
-    },
-    { 
-      label: "Buy NFT", 
-      icon: <h4>Buy NFT</h4>, 
-      onClick: e => {
-        e.preventDefault()
-        setUserInput("Can you purchase me 1 DegenPoet NFT?") 
-      }
-    },
-    { 
       label: "Stream", 
       icon: <h4>Stream</h4>, 
       onClick: e => {
@@ -140,13 +119,37 @@ export default function Home() {
       }
     },
     { 
-      label: "Stake", 
+      label: "Swap", 
+      icon: <h4>Swap</h4>, 
+      onClick: (e) => {
+        e.preventDefault()
+        setUserInput("Help me exchange my 0.1 SOL for USDC tokens, optimizing for speed and security.")
+      }
+    },
+    { 
+      label: "Liquid-Stake idle assets weekly", 
       icon: <h4>Stake</h4>, 
       onClick: e => {
         e.preventDefault()
-        setUserInput("Can you please stake 0.1 SOL into the staking platform with the highest APY") 
+        setUserInput("Can you please stake 0.1 SOL into the staking platform with the highest APY with weekly schedule?")
       }
     },
+    { 
+      label: "NFT Buy Limit Order", 
+      icon: <h4>NFT BLO</h4>, 
+      onClick: e => {
+        e.preventDefault()
+        setUserInput("Can you purchase me 1 DegenPoet NFT?") 
+      }
+    },
+    { 
+      label: "DCA", 
+      icon: <h4>DCA</h4>, 
+      onClick: e => {
+        e.preventDefault()
+        setUserInput("Can you make a DCA for me with SOL token") 
+      }
+    }
   ];
 
   // Auto scroll chat to bottom
@@ -165,6 +168,11 @@ export default function Home() {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!connected) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
 
     const question = userInput.trim();
     if (question === "") {
@@ -225,6 +233,9 @@ export default function Home() {
         
             if (data.type) {
               setTxnType(data.type);
+              if (data.type === "swap")
+                setConfirmThirdOption("Place Limit Orders");
+            
               setConfirmModal(true);
             } else {
               setTxnType("none");
@@ -571,6 +582,8 @@ export default function Home() {
         <ModalComponent
           transaction={transactions}
           intentContext={txnContext}
+          footerThirdOption={confirmThirdOption}
+          setConfirmThirdOption={setConfirmThirdOption}
           isModalOpen={confirmModa}
           closeModal={() => closeModal()}
           doTransaction={() => sendTransaction()}

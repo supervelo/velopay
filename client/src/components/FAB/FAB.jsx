@@ -1,5 +1,6 @@
 import { useState } from "react";
 import cn from "classnames";
+import { MdElectricBolt } from "react-icons/md";
 
 import "./styles.scss";
 
@@ -16,6 +17,10 @@ const FAB = ({ actions }) => {
       onMouseEnter={mouseEnter}
       onMouseLeave={mouseLeave}
     >
+
+      <li className="fab-button">
+        <MdElectricBolt />
+      </li>
 
       {actions.map((action, index) => (
         <li

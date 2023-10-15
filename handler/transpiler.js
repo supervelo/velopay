@@ -71,7 +71,7 @@ const transpiler = async (currentStep, classifier, userAddress) => {
         let singlePair = swapMeta[0];
         // Naive check if the pair should be in reverse order
         // because maybe the gpt pair response is in reverse order
-        if (singlePair.pair[0].toLowerCase() === swapInfo[0][0].toLowerCase()) {
+        if (singlePair.pair[0].toLowerCase() !== swapInfo[0][0].toLowerCase()) {
             singlePair = {
                 ...singlePair,
                 pair: [singlePair.pair[1], singlePair.pair[0]],

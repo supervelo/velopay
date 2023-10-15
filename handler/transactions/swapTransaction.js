@@ -63,7 +63,7 @@ const constructSolanaSwapTransaction = async (swapData) => {
 
   return {
     success: true,
-    context: `This transactions would swap your ${swapData.amount} of ${swapData.pair[0]} token against ${swapData.pair[1]} token. This only works on mainnet.`,
+    context: `This transactions would swap your ${swapData.amount} of ${swapData.pair[0]} token against ${swapData.pair[1]} token. Would you like to place TP 1.8x with 55% and SL 0.5x with 100% on this transaction? Press 'Ok' if you only want to swap the tokens instantly.`,
     transaction: transactions
   };
 }
