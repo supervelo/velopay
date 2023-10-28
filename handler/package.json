@@ -12,8 +12,9 @@
   "license": "ISC",
   "dependencies": {
     "@axelar-network/axelarjs-sdk": "^0.13.5",
+    "@jup-ag/dca-sdk": "^2.3.5",
     "@solana/spl-token": "^0.3.8",
-    "@solana/web3.js": "^1.78.5",
+    "@solana/web3.js": "^1.87.2",
     "@streamflow/stream": "^5.2.7",
     "@tensorflow-models/universal-sentence-encoder": "^1.3.3",
     "@tensorflow/tfjs-node": "^4.8.0",
