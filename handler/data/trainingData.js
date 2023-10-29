@@ -1019,6 +1019,10 @@ const transactionData = [
         statement:
             "I want to sent 0.5 SOL token to the address 0x288d1d682311018736B820294D22Ed0DBE372188 every second",
     },
+    {
+        type: "dca",
+        statement: "I want to do DCA 100 ETH for USDC tokens.",
+    },
 ];
 
 module.exports = { transactionData };

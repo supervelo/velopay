@@ -7,7 +7,7 @@ const {
     LAMPORTS_PER_SOL,
     Connection,
 } = require("@solana/web3.js");
-const { createStreamParams } = require("../utils/streamFlow");
+const { createDCATx } = require("../utils/jupiter");
 /*
 const streamTransactionData = {
             operation: "stream",
@@ -22,26 +22,19 @@ const streamTransactionData = {
         };
 */
 const constructDCATransaction = async (DCAMeta) => {
-    const {
-        name,
-        recipent,
-        tokenId,
-        amount,
-        streamType,
-        unlockInterval,
-        streamDuration,
-    } = streamMeta;
+    const { userAddress, amount, programId } = DCAMeta;
+    const tx = createDCATx(new PublicKey(userAddress));
     return {
         success: true,
-        context: `This transaction might create a wSOL account which would convert ${amount} SOL to ${amount} WSOL(Wrapped SOL) and then \n create a stream ${streamType} of ${amount} ${name} token from your Solana account to ${recipent} that will unlock every ${unlockInterval} that last ${streamDuration[0]} ${streamDuration[1]}`,
+        context: `This transaction will do a DCA swap of ${amount} USDC to SOL every day over the period of 5 days`,
         transaction: [
             {
-                to: streamMeta.programId,
-                data: streamMeta,
-                value: streamMeta.amount,
+                to: DCAMeta.programId,
+                data: tx,
+                value: amount,
             },
         ],
     };
 };
 
-module.exports = { constructStreamTransaction };
+module.exports = { constructDCATransaction };

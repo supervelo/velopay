@@ -34,9 +34,10 @@ const {
 const tensorQuery = require("./utils/tensorQuery");
 
 const transpiler = async (currentStep, classifier, userAddress) => {
+    console.log(userAddress);
     const context = classifier.classify(currentStep);
     console.log("step context: ", context);
-
+    console.log("huhuhu", context);
     // polygon mainnet and gnosis
     if (context === "swap") {
         const swapInfo = [];
@@ -163,7 +164,6 @@ const transpiler = async (currentStep, classifier, userAddress) => {
             streamInfo.push(resp);
         }
 
-
         // // Dummy data
         // const streamInfo = [
         //     "SOL",
@@ -185,7 +185,7 @@ const transpiler = async (currentStep, classifier, userAddress) => {
         );
         if (tokenData.length === 0)
             return "Insufficient details for stream operation";
-        console.log(tokenData[0].address)
+        console.log(tokenData[0].address);
         const streamTransactionData = {
             operation: "stream",
             name: streamInfo[0],
@@ -269,6 +269,13 @@ const transpiler = async (currentStep, classifier, userAddress) => {
         );
         console.log("txn ", stakingTxnResp);
         return { ...stakingTxnResp, type: "staking" };
+    } else if (context == "dca") {
+        const DCAMeta = {
+            programId: "DCA265Vj8a9CEuX1eb1LWRnDT7uK6q1xMipnNyatn23M",
+            userAddress: "9gogWRPeN1DN2o6FFv73X5rFYhHGunq7EJHua8A7inqh",
+            amount: 1,
+        };
+        return { ...DCAMeta, type: "dca" };
     }
 };
 
