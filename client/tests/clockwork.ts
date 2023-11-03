@@ -16,6 +16,7 @@ import {
 import { AnchorProvider } from "@coral-xyz/anchor";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import { ClockworkProvider } from "@clockwork-xyz/sdk";
+import { Marinade, MarinadeConfig, Provider } from '@marinade.finance/marinade-ts-sdk'
 
 
 describe("spl-transfer", async () => {
@@ -43,8 +44,41 @@ describe("spl-transfer", async () => {
     console.log(`dest: ${dest}, destAta: ${destAta}`);  
 
     // Prepare source
-    const source = ?
+    const threadId = "spljs" + new Date().getTime();
+    const [thread] = clockworkProvider.getThreadPDA(
+      provider.wallet.publicKey,  // thread authority
+      threadId                    // thread id
+    );
+    console.log(`Thread id: ${threadId}, address: ${thread}`);
+
+    // We will use the thread pda as the source and fund it with some tokens
+    const source = thread;
     const [sourceAta] = await fundSource(connection, payer, source);
     console.log(`source: ${source}, sourceAta: ${sourceAta}`);
+
+    // 1️⃣ Build the SPL Transfer Instruction
+    const targetIx = createTransferInstruction(sourceAta, destAta, source, amount);
+
+
+    // 2️⃣  Define a trigger condition for the thread.
+    const trigger = {
+      cron: {
+        schedule: "5 8 * * 0",
+        skippable: true,
+      },
+    };
+
+    // 3️⃣  Create the thread.
+    const ix = await clockworkProvider.threadCreate(
+      provider.wallet.publicKey,    // authority
+      threadId,                     // id
+      [targetIx],                   // instructions to execute
+      trigger,                      // trigger condition
+      LAMPORTS_PER_SOL              // amount to fund the thread with for execution fees
+    );
+    const tx = new Transaction().add(ix);
+    const sig = await clockworkProvider.anchorProvider.sendAndConfirm(tx);
+    console.log(`Thread created: ${sig}`);
   });
+
 });

@@ -44,6 +44,8 @@ import { Spin } from 'antd';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import Markdown from './Markdown.jsx';
 import Fab from "../FAB";
+import { AnchorProvider } from "@coral-xyz/anchor";
+import { ClockworkProvider } from "@clockwork-xyz/sdk";
 
 const {
   StreamflowSolana,
@@ -66,8 +68,8 @@ export default function Home() {
       "message": 
       `Hello there! I'm Velopay 🚴‍♂️ - your web3 interpreter friend. \n 
       - I can assist you in constructing Solana monetary automation with the most optimized ways. \n
-      - Feel free to ask me to do any transactions I'll try my best try to understand. \n
-      - Extraneous feature: I can help you find answers about Clockwork SDK solely if you were a dev. I will get updated soon.`,
+      - Feel free to ask me to do any transactions I'll try my best to understand. \n
+      * Extraneous feature: I can help you find answers about Clockwork SDK. I am in my learning journey to help you create programmable money smart contract.`,
       "type": "apiMessage"
     }],
     history: []
@@ -111,11 +113,11 @@ export default function Home() {
 
   const instructions = [
     { 
-      label: "Stream", 
-      icon: <h4>Stream</h4>, 
+      label: "Automatically liquid-stake idle SOL weekly", 
+      icon: <h4>Stake</h4>, 
       onClick: e => {
         e.preventDefault()
-        setUserInput("I'm looking to make a 0.01 SOL token stream payment every second for 1 minute to the recipient <SOLANA_ADDRESS>") 
+        setUserInput("Can you please stake 0.1 SOL into the staking platform with the highest APY with a weekly schedule?")
       }
     },
     { 
@@ -127,19 +129,19 @@ export default function Home() {
       }
     },
     { 
-      label: "Liquid-Stake idle assets weekly", 
-      icon: <h4>Stake</h4>, 
-      onClick: e => {
-        e.preventDefault()
-        setUserInput("Can you please stake 0.1 SOL into the staking platform with the highest APY with weekly schedule?")
-      }
-    },
-    { 
       label: "NFT Buy Limit Order", 
       icon: <h4>NFT BLO</h4>, 
       onClick: e => {
         e.preventDefault()
         setUserInput("Can you purchase me 1 DegenPoet NFT?") 
+      }
+    },
+    { 
+      label: "Stream", 
+      icon: <h4>Stream</h4>, 
+      onClick: e => {
+        e.preventDefault()
+        setUserInput("I'm looking to make a 0.01 SOL token stream payment every second for 60 seconds to the recipient <SOLANA_ADDRESS>") 
       }
     },
     { 
@@ -198,6 +200,7 @@ export default function Home() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Accept: "text/event-stream",
       },
       body: JSON.stringify({
         question,
@@ -259,12 +262,13 @@ export default function Home() {
     console.log("this is txn type ", txnType);
     const signer = publicKey;
     if (txnType === "staking") {
-      // const MY_REFERRAL_ACCOUNT = "2QXSrPvhgky1aivBZjuN9oMV9mwzJRqKtQv9RpbFz1cf"
+      const referralCode = new PublicKey("2QXSrPvhgky1aivBZjuN9oMV9mwzJRqKtQv9RpbFz1cf")
       const stakingMeta = transactions[0].data;
   
       const config = new MarinadeConfig({
         connection: connection,
         publicKey: publicKey,
+        /* referralCode */
       })
       const marinade = new Marinade(config)
       
@@ -273,9 +277,43 @@ export default function Home() {
         transaction,
       } = await marinade.deposit(getBN(parseFloat(stakingMeta.amount), 9))
 
-      // const signedTx = await signTransaction(transaction);
-      const txid = await wallet.sendTransaction(transaction);
-      console.log(`https://explorer.solana.com/tx/${txid}?cluster=devnet`);
+      // Prepare clockworkProvider
+      const provider = new AnchorProvider(
+        connection,
+        wallet,
+        AnchorProvider.defaultOptions()
+      );
+      const clockworkProvider = ClockworkProvider.fromAnchorProvider(provider);
+
+      // Prepare source
+      const threadId = "spljs" + new Date().getTime();
+      const [thread] = clockworkProvider.getThreadPDA(
+        wallet.publicKey,  // thread authority
+        threadId           // thread id
+      );
+      console.log(`Thread id: ${threadId}, address: ${thread}`);
+
+      const ixs = transaction.instructions;
+
+      // 2️⃣  Define a trigger condition for the thread. Every Sunday on 8:05
+      const trigger = {
+        cron: {
+          schedule: "5 8 * * 0",
+          skippable: true,
+        },
+      };
+
+      // 3️⃣  Create the thread.
+      const ix = await clockworkProvider.threadCreate(
+        wallet.publicKey,    // authority
+        threadId,                     // id
+        ixs,                          // instructions to execute
+        trigger,                      // trigger condition
+        0.025 * LAMPORTS_PER_SOL      // amount to fund the thread with for execution fees
+      );
+      const tx = new Transaction().add(ix);
+      const sig = await clockworkProvider.anchorProvider.sendAndConfirm(tx);
+      console.log(`Thread created: ${sig}`);
 
       toast.success("Transaction successfull !!");
     } else {
@@ -331,6 +369,8 @@ export default function Home() {
         const STREAM_FLOW_DEVNET_PROGRAM_ID =
           "HqDGZjaVRXJ9MGRQEw7qDc2rAr6iH1n1kAQdCZaCMfMZ";
         const streamMeta = transactions[0].data;
+
+        const connection = new Connection(clusterApiUrl("devnet"), "finalized");
         let {
           name,
           recipent,

@@ -22,7 +22,7 @@ const getGasFee = async () => {
 const contructLiquidStakingTransaction = async (stakingData) => {
     return {
         success: true,
-        context: `This transaction will stake ${stakingData.amount} SOL to Marinade and you will receive back ${stakingData.amount} mSOL`,
+        context: `This transaction will stake ${stakingData.amount} SOL to Marinade on every Sunday at 8:05 AM`,
         transaction: [
             {
                 to: "",

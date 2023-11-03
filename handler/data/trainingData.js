@@ -1017,7 +1017,12 @@ const transactionData = [
     {
         type: "stream",
         statement:
-            "I want to sent 0.5 SOL token to the address 0x288d1d682311018736B820294D22Ed0DBE372188 every second",
+            "I want to send 0.5 SOL token to the address 0x288d1d682311018736B820294D22Ed0DBE372188 every second",
+    },
+    {
+        type: "stream",
+        statement:
+            "Can you help me schedule a SOL transfer every second to this address 0x288d1d682311018736B820294D22Ed0DBE372188",
     },
 ];
 
