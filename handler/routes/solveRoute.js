@@ -44,7 +44,7 @@ router.post('/', async (req, res) => {
       sendData(JSON.stringify({ data: err }));
     }
 
-    if (txn.success === true) {
+    if (txn && txn.success === true) {
 
       sendData(JSON.stringify({ data: txn }));
       setTimeout(() => {

@@ -250,11 +250,10 @@ const transpiler = async (currentStep, classifier, userAddress) => {
             currentStep
         );
 
-        if (tokenAmount === "-") {
-            return {
-                success: false,
-                transactions: [],
-            };
+        console.log(tokenAmount)
+
+        if (tokenAmount === "-" || !tokenAmount) {
+            return "Insufficient details for staking operation";
         }
 
         const stakingTransactionData = {
